@@ -8,9 +8,9 @@ import { Language } from '@/types';
 
 interface NavbarProps {
   onOpenBooking: () => void;
-  onNavigateToServices: () => void;
+  onNavigateToServices?: () => void;
   onNavigateToStore: () => void;
-  onNavigateToTrust: () => void;
+  onNavigateToTrust?: () => void;
   onNavigateToTracker: () => void;
   onOpenProfile: () => void;
   onOpenAuth: () => void;
@@ -102,23 +102,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               {t.nav.home}
             </button>
             <button
-              onClick={onNavigateToServices}
-              className="hover:text-blue-600 transition-colors cursor-pointer"
-            >
-              {t.nav.services}
-            </button>
-            <button
               onClick={onNavigateToStore}
               className="hover:text-blue-600 transition-colors cursor-pointer flex items-center gap-1.5 text-slate-900 font-bold"
             >
               <ShoppingBag className="w-3.5 h-3.5 text-blue-600" />
               <span>{t.nav.store}</span>
-            </button>
-            <button
-              onClick={onNavigateToTrust}
-              className="hover:text-blue-600 transition-colors cursor-pointer"
-            >
-              {t.nav.whyUs}
             </button>
             <button
               onClick={onNavigateToTracker}
@@ -287,23 +275,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               {t.nav.home}
             </button>
             <button
-              onClick={() => { setMobileMenuOpen(false); onNavigateToServices(); }}
-              className="text-left py-2 border-b border-slate-100"
-            >
-              {t.nav.services}
-            </button>
-            <button
               onClick={() => { setMobileMenuOpen(false); onNavigateToStore(); }}
               className="text-left py-2 border-b border-slate-100 font-bold text-slate-900 flex items-center gap-1.5"
             >
               <ShoppingBag className="w-4 h-4 text-blue-600" />
               <span>{t.nav.store}</span>
-            </button>
-            <button
-              onClick={() => { setMobileMenuOpen(false); onNavigateToTrust(); }}
-              className="text-left py-2 border-b border-slate-100"
-            >
-              {t.nav.whyUs}
             </button>
             <button
               onClick={() => { setMobileMenuOpen(false); onNavigateToTracker(); }}
