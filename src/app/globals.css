@@ -20,3 +20,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* PC / Desktop Default View Scaling (Matches 90% zoom proportion on desktop screens) */
+@media (min-width: 1024px) {
+  html {
+    font-size: 90%;
+  }
+}
+
