@@ -214,14 +214,14 @@ export default function Home() {
         {/* Why Choose Us with nursing vitals photo */}
         <TrustSection />
 
-        {/* Verified Google Reviews Section */}
-        <ReviewsSection />
-
         {/* Care Services & Interactive Staff Qualification Pricing */}
         <ServicesSection
           services={services}
           onSelectServiceToBook={(svc, tierId) => handleOpenBooking(svc, tierId)}
         />
+
+        {/* Verified Google Reviews Section */}
+        <ReviewsSection />
 
         {/* Dedicated Medical Equipment Store Showcase Banner linking to /store - 100% Pure Localized */}
         <section className="py-12 bg-slate-50 border-t border-slate-200">
