@@ -6,7 +6,8 @@ import { useAuth } from '@/context/AuthContext';
 import { ServiceItem, BookingSubmission, StaffTierId } from '@/types';
 import { districtList } from '@/data/services';
 import { staffTiers } from '@/data/staffTiers';
-import { X, CheckCircle, ArrowRight, ArrowLeft, MessageSquare, Heart, Lock, User, LogIn, Award, Stethoscope } from 'lucide-react';
+import { saveBookingToFirestore } from '@/lib/firestoreService';
+import { X, CheckCircle, ArrowRight, ArrowLeft, MessageSquare, Heart, Lock, User, LogIn, Award, Stethoscope, Loader2 } from 'lucide-react';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -53,6 +54,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
   // Confirmation state
   const [confirmedBooking, setConfirmedBooking] = useState<BookingSubmission | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   useEffect(() => {
     if (selectedService) {
@@ -132,9 +134,17 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         createdAt: new Date().toISOString()
       };
 
-      setConfirmedBooking(newBooking);
-      onBookingSubmitted(newBooking);
-      setCurrentStep(5);
+      setIsSubmitting(true);
+      saveBookingToFirestore(newBooking)
+        .catch((err) => {
+          console.warn('[Firestore] Booking write fallback (proceeding offline):', err);
+        })
+        .finally(() => {
+          setIsSubmitting(false);
+          setConfirmedBooking(newBooking);
+          onBookingSubmitted(newBooking);
+          setCurrentStep(5);
+        });
     }
   };
 
@@ -177,7 +187,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
             <X className="w-6 h-6" />
           </button>
           <div className="flex items-center gap-2 mb-1 text-slate-300 text-xs font-bold uppercase tracking-wider">
-            <Heart className="w-4 h-4 text-blue-500 fill-blue-500" />
+            <img src="/logo.png" alt="Logo" className="w-5 h-5 rounded-full bg-white object-contain p-0.5" />
             <span>Prime Life Care Dispatch Portal</span>
           </div>
           <h3 className="text-xl sm:text-2xl font-black">
@@ -574,10 +584,20 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
             <button
               onClick={handleNext}
-              className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm flex items-center gap-2 shadow-md shadow-blue-500/20 cursor-pointer active:scale-95"
+              disabled={isSubmitting}
+              className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-sm flex items-center gap-2 shadow-md shadow-blue-500/20 cursor-pointer active:scale-95"
             >
-              <span>{currentStep === 4 ? t.booking.submitBtn : t.booking.nextBtn}</span>
-              <ArrowRight className="w-4 h-4" />
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Submitting to Cloud...</span>
+                </>
+              ) : (
+                <>
+                  <span>{currentStep === 4 ? t.booking.submitBtn : t.booking.nextBtn}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
           </div>
         )}

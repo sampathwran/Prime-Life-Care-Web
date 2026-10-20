@@ -78,9 +78,13 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-            <div className="w-11 h-11 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
-              <Heart className="w-6 h-6 fill-white" />
+          <div className="flex items-center gap-3 cursor-pointer select-none" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+            <div className="relative w-12 h-12 rounded-full overflow-hidden bg-white shadow-md shadow-blue-500/10 border border-slate-200/80 p-0.5 shrink-0 transition-transform duration-200 hover:scale-105">
+              <img
+                src="/logo.png"
+                alt="Prime Life Care Logo"
+                className="w-full h-full object-contain rounded-full"
+              />
             </div>
             <div>
               <div className="flex items-center gap-1.5">

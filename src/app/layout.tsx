@@ -6,6 +6,10 @@ import { AuthProvider } from "@/context/AuthContext";
 export const metadata: Metadata = {
   title: "Prime Life Care | වැඩිහිටි සාත්තු සේවය | Elderly & Patient Care Services Sri Lanka",
   description: "Certified, police-verified in-home nursing and elderly care services across Sri Lanka. 12-hour, 24-hour live-in care, post-surgery and dementia support.",
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
   keywords: [
     "Elderly care Sri Lanka",
     "වැඩිහිටි සාත්තු සේවය",

@@ -31,9 +31,13 @@ export const Footer: React.FC<FooterProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           {/* Col 1: Brand & Bio */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white">
-                <Heart className="w-5 h-5 fill-white" />
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-full overflow-hidden bg-white p-0.5 border border-slate-700 shrink-0">
+                <img
+                  src="/logo.png"
+                  alt="Prime Life Care Logo"
+                  className="w-full h-full object-contain rounded-full"
+                />
               </div>
               <span className="text-xl font-black text-white tracking-tight">PRIME LIFE <span className="text-blue-400">CARE</span></span>
             </div>

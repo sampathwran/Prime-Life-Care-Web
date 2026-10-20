@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { BookingSubmission } from '@/types';
-import { Search, CheckCircle, AlertCircle, Phone } from 'lucide-react';
+import { findBookingByCodeOrPhone, subscribeToBooking } from '@/lib/firestoreService';
+import { Search, CheckCircle, AlertCircle, Phone, Loader2, Radio } from 'lucide-react';
 
 interface BookingTrackerProps {
   bookings: BookingSubmission[];
@@ -13,21 +14,52 @@ export const BookingTracker: React.FC<BookingTrackerProps> = ({ bookings }) => {
   const { t } = useLanguage();
   const [query, setQuery] = useState('');
   const [searched, setSearched] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const [result, setResult] = useState<BookingSubmission | null>(null);
 
-  const handleSearch = (e: React.FormEvent) => {
+  // Subscribe to live Firestore updates when a booking code is selected
+  useEffect(() => {
+    if (!result?.bookingCode) return;
+    const unsubscribe = subscribeToBooking(result.bookingCode, (updated) => {
+      if (updated) {
+        setResult(updated);
+      }
+    });
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [result?.bookingCode]);
+
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
 
+    setIsSearching(true);
+    setSearched(true);
+
     const trimmed = query.trim().toUpperCase();
-    const found = bookings.find(
+    const localFound = bookings.find(
       (b) =>
         b.bookingCode.toUpperCase() === trimmed ||
         b.contactPhone.replace(/\D/g, '') === query.replace(/\D/g, '')
     );
 
-    setResult(found || null);
-    setSearched(true);
+    if (localFound) {
+      setResult(localFound);
+    }
+
+    try {
+      const liveDoc = await findBookingByCodeOrPhone(query);
+      if (liveDoc) {
+        setResult(liveDoc);
+      } else if (!localFound) {
+        setResult(null);
+      }
+    } catch (err) {
+      console.warn('[Tracker] Query error, using local fallback:', err);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   const getStatusInfo = (status: BookingSubmission['status']) => {
@@ -94,9 +126,11 @@ export const BookingTracker: React.FC<BookingTrackerProps> = ({ bookings }) => {
           </div>
           <button
             type="submit"
-            className="px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md shadow-blue-500/20 transition-all cursor-pointer"
+            disabled={isSearching}
+            className="px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 disabled:opacity-70 text-white font-bold text-sm shadow-md shadow-blue-500/20 transition-all cursor-pointer flex items-center justify-center gap-2"
           >
-            {t.tracker.searchBtn}
+            {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            <span>{t.tracker.searchBtn}</span>
           </button>
         </form>
 

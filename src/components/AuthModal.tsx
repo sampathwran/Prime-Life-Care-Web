@@ -106,7 +106,7 @@ export const AuthModal: React.FC = () => {
             <X className="w-5 h-5" />
           </button>
           <div className="flex items-center gap-2 mb-1 text-emerald-200 text-xs font-bold uppercase tracking-wider">
-            <Heart className="w-4 h-4 fill-emerald-200" />
+            <img src="/logo.png" alt="Logo" className="w-5 h-5 rounded-full bg-white object-contain p-0.5" />
             <span>Prime Life Care Security</span>
           </div>
           <h3 className="text-xl font-black">

@@ -12,6 +12,7 @@ import { BookingModal } from '@/components/BookingModal';
 import { initialMedicalItems } from '@/data/medicalItems';
 import { initialServices, districtList } from '@/data/services';
 import { MedicalItem, EquipmentOrder, BookingSubmission, PaymentRecord } from '@/types';
+import { saveOrderToFirestore } from '@/lib/firestoreService';
 import {
   ShoppingBag,
   Search,
@@ -283,6 +284,11 @@ export default function StorePage() {
     };
 
     setOrders((prev) => [newOrder, ...prev]);
+
+    // Save order to Firestore cloud database
+    saveOrderToFirestore(newOrder).catch((err) => {
+      console.warn('[Firestore] Order save fallback:', err);
+    });
 
     // Append to Payment Records
     const newInvoice: PaymentRecord = {

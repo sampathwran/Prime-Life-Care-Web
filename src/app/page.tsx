@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { Hero } from '@/components/Hero';
@@ -16,6 +16,7 @@ import { initialServices } from '@/data/services';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { ServiceItem, BookingSubmission, PaymentRecord, EquipmentOrder, StaffTierId } from '@/types';
+import { fetchUserBookingsFromFirestore, fetchUserOrdersFromFirestore } from '@/lib/firestoreService';
 import { Phone, MessageCircle, ShoppingBag, ArrowRight, Truck } from 'lucide-react';
 
 export default function Home() {
@@ -88,7 +89,7 @@ export default function Home() {
   ]);
 
   // Equipment Orders State
-  const [orders] = useState<EquipmentOrder[]>([
+  const [orders, setOrders] = useState<EquipmentOrder[]>([
     {
       id: 'ord_demo_1',
       orderCode: 'ORD-2026-1049',
@@ -145,6 +146,33 @@ export default function Home() {
       status: 'paid'
     }
   ]);
+
+  // Sync with Firestore Cloud when logged in
+  useEffect(() => {
+    if (!user) return;
+    
+    // Fetch user's real bookings
+    fetchUserBookingsFromFirestore(user.id).then((cloudBookings) => {
+      if (cloudBookings.length > 0) {
+        setBookings((prev) => {
+          const cloudCodes = new Set(cloudBookings.map((b) => b.bookingCode));
+          const filteredPrev = prev.filter((b) => !cloudCodes.has(b.bookingCode));
+          return [...cloudBookings, ...filteredPrev];
+        });
+      }
+    }).catch((err) => console.warn('[Firestore] Bookings sync fallback:', err));
+
+    // Fetch user's real equipment orders
+    fetchUserOrdersFromFirestore(user.id).then((cloudOrders) => {
+      if (cloudOrders.length > 0) {
+        setOrders((prev) => {
+          const cloudCodes = new Set(cloudOrders.map((o) => o.orderCode));
+          const filteredPrev = prev.filter((o) => !cloudCodes.has(o.orderCode));
+          return [...cloudOrders, ...filteredPrev];
+        });
+      }
+    }).catch((err) => console.warn('[Firestore] Orders sync fallback:', err));
+  }, [user]);
 
   // Modals state
   const [isBookingOpen, setIsBookingOpen] = useState(false);
