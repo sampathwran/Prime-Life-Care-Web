@@ -11,6 +11,7 @@ import { BookingModal } from '@/components/BookingModal';
 import { BookingTracker } from '@/components/BookingTracker';
 import { ProfileModal } from '@/components/ProfileModal';
 import { AuthModal } from '@/components/AuthModal';
+import { GoogleOneTapPrompt } from '@/components/GoogleOneTapPrompt';
 import { Footer } from '@/components/Footer';
 import { initialServices } from '@/data/services';
 import { useAuth } from '@/context/AuthContext';
@@ -353,6 +354,9 @@ export default function Home() {
 
       {/* Email Login & Registration Modal */}
       <AuthModal />
+
+      {/* Google 1-Tap Auto-Suggest Floating Banner */}
+      <GoogleOneTapPrompt />
 
       {/* Floating Instant WhatsApp / Hotline Helper Buttons */}
       <div className="fixed bottom-6 right-6 z-30 flex flex-col gap-2.5">

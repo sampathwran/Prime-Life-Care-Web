@@ -126,6 +126,51 @@ export const AuthModal: React.FC = () => {
             </div>
           )}
 
+          {/* Primary 1-Tap Google Sign-Up / Login (Auto-selects phone/PC Gmail) */}
+          <div className="mb-5">
+            <button
+              type="button"
+              onClick={async () => {
+                setLoading(true);
+                try {
+                  await loginWithGoogle();
+                } catch (e: any) {
+                  setError(e?.message || 'Google Sign-in failed');
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              disabled={loading}
+              className="w-full py-3.5 px-4 rounded-2xl border-2 border-blue-500/30 hover:border-blue-600 bg-white hover:bg-blue-50/40 text-slate-800 font-extrabold text-sm flex items-center justify-center gap-3 shadow-sm hover:shadow-md transition-all active:scale-98 cursor-pointer relative overflow-hidden group"
+            >
+              <div className="absolute top-0 right-0 bg-emerald-500 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-bl-lg">
+                ⚡ {language === 'si' ? 'ඉක්මන් ලියාපදිංචිය' : language === 'ta' ? 'விரைவான பதிவு' : '1-Tap Fast'}
+              </div>
+              <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.87c2.26-2.09 3.67-5.17 3.67-9.15z"/>
+                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.87-3.05c-1.08.72-2.45 1.16-4.06 1.16-3.13 0-5.78-2.11-6.73-4.96H1.25v3.15C3.25 21.36 7.34 24 12 24z"/>
+                <path fill="#FBBC05" d="M5.27 14.24A7.18 7.18 0 0 1 4.89 12c0-.78.14-1.53.38-2.24V6.61H1.25A11.967 11.967 0 0 0 0 12c0 1.92.45 3.74 1.25 5.39l4.02-3.15z"/>
+                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.25 2.64 1.25 6.61l4.02 3.15c.95-2.85 3.6-4.96 6.73-4.96z"/>
+              </svg>
+              <span>{language === 'si' ? 'ඔබගේ Gmail ගිණුමෙන් එක ක්ලික් එකෙන් Register වන්න' : language === 'ta' ? 'உங்கள் Gmail மூலம் பதிவு செய்க' : 'Sign Up / In with your Gmail'}</span>
+            </button>
+            <p className="text-[11px] text-center text-slate-500 mt-1.5 font-medium flex items-center justify-center gap-1">
+              <span>📱</span>
+              <span>{language === 'si' ? 'දුරකථනයේ හෝ පරිගණකයේ ඇති Gmail ස්වයංක්‍රීයව තෝරයි' : 'Auto-selects your phone or PC saved Gmail'}</span>
+            </p>
+          </div>
+
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-200"></div>
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-3 text-slate-400 font-bold">
+                {language === 'si' ? 'හෝ වෙනත් විස්තර ඇතුළත් කරන්න' : language === 'ta' ? 'அல்லது மின்னஞ்சல் மூலம்' : 'or enter details manually'}
+              </span>
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === 'register' && (
               <>
@@ -206,42 +251,6 @@ export const AuthModal: React.FC = () => {
               {loading ? 'Please wait...' : mode === 'login' ? t.loginBtn : t.registerBtn}
             </button>
           </form>
-
-          {/* Google Sign In Divider & Button */}
-          <div className="relative my-4">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200"></div>
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-3 text-slate-400 font-bold">
-                {language === 'si' ? 'හෝ Google මඟින්' : language === 'ta' ? 'அல்லது Google மூலம்' : 'or with Google'}
-              </span>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={async () => {
-              setLoading(true);
-              try {
-                await loginWithGoogle();
-              } catch (e: any) {
-                setError(e?.message || 'Google Sign-in failed');
-              } finally {
-                setLoading(false);
-              }
-            }}
-            disabled={loading}
-            className="w-full py-2.5 px-4 rounded-xl border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center justify-center gap-2.5 shadow-2xs transition-all cursor-pointer"
-          >
-            <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.87c2.26-2.09 3.67-5.17 3.67-9.15z"/>
-              <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.87-3.05c-1.08.72-2.45 1.16-4.06 1.16-3.13 0-5.78-2.11-6.73-4.96H1.25v3.15C3.25 21.36 7.34 24 12 24z"/>
-              <path fill="#FBBC05" d="M5.27 14.24A7.18 7.18 0 0 1 4.89 12c0-.78.14-1.53.38-2.24V6.61H1.25A11.967 11.967 0 0 0 0 12c0 1.92.45 3.74 1.25 5.39l4.02-3.15z"/>
-              <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.25 2.64 1.25 6.61l4.02 3.15c.95-2.85 3.6-4.96 6.73-4.96z"/>
-            </svg>
-            <span>{language === 'si' ? 'Google ගිණුමෙන් පිවිසෙන්න' : language === 'ta' ? 'Google மூலம் உள்நுழைக' : 'Continue with Google'}</span>
-          </button>
 
           {/* Quick Demo Login Pill */}
           <div className="mt-4 pt-4 border-t border-slate-100 text-center">

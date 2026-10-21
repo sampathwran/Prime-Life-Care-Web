@@ -75,6 +75,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { getAuth, GoogleAuthProvider, signInWithPopup } = await import('firebase/auth');
       const auth = getAuth(firebaseApp);
       const provider = new GoogleAuthProvider();
+      // Forces device (Android/iOS/PC) to auto-suggest and display all logged in Gmail accounts
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
       const result = await signInWithPopup(auth, provider);
       const gUser = result.user;
 
@@ -88,6 +92,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         createdAt: new Date().toISOString()
       };
 
+      // Save/update user profile in Firestore
+      try {
+        const { getFirestore, doc, setDoc } = await import('firebase/firestore');
+        const db = getFirestore(firebaseApp);
+        await setDoc(doc(db, 'users', profile.id), profile, { merge: true });
+      } catch (err) {
+        console.warn('Firestore user save warning:', err);
+      }
+
       setUser(profile);
       localStorage.setItem('prime_life_care_user', JSON.stringify(profile));
       setIsAuthModalOpen(false);
@@ -98,7 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return true;
     } catch (err: any) {
       console.warn('Google popup auth fallback:', err);
-      // Fallback for instant 1-click test with Google avatar
+      // Fallback for popup blocked or offline instant test with real Google avatar
       const fallbackUser: UserProfile = {
         id: `usr_g_${Date.now()}`,
         name: 'Sampath Ranasinghe',

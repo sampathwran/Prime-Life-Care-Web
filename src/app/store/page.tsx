@@ -9,6 +9,7 @@ import { Footer } from '@/components/Footer';
 import { ProfileModal } from '@/components/ProfileModal';
 import { AuthModal } from '@/components/AuthModal';
 import { BookingModal } from '@/components/BookingModal';
+import { GoogleOneTapPrompt } from '@/components/GoogleOneTapPrompt';
 import { initialMedicalItems } from '@/data/medicalItems';
 import { initialServices, districtList } from '@/data/services';
 import { MedicalItem, EquipmentOrder, BookingSubmission, PaymentRecord } from '@/types';
@@ -926,6 +927,9 @@ export default function StorePage() {
 
       {/* Auth Modal */}
       <AuthModal />
+
+      {/* Google 1-Tap Auto-Suggest Floating Banner */}
+      <GoogleOneTapPrompt />
     </div>
   );
 }
