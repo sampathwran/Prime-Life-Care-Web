@@ -166,9 +166,18 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pr-8">
             <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-sm">
-                {user.name.charAt(0)}
-              </div>
+              {user.photoURL ? (
+                <img
+                  src={user.photoURL}
+                  alt={user.name}
+                  className="w-12 h-12 rounded-xl object-cover border border-slate-700 shadow-sm"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-sm">
+                  {user.name.charAt(0)}
+                </div>
+              )}
               <div>
                 <h3 className="text-lg sm:text-xl font-bold">{user.name}</h3>
                 <p className="text-xs text-slate-300 mt-0.5">{user.email} • {user.phone}</p>

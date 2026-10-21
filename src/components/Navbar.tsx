@@ -87,41 +87,53 @@ export const Navbar: React.FC<NavbarProps> = ({
               />
             </div>
             <div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 leading-none">
                 <span className="text-xl sm:text-2xl font-black tracking-tight text-slate-900">PRIME LIFE</span>
                 <span className="text-xl sm:text-2xl font-black text-blue-600">CARE</span>
               </div>
-              <p className="text-[11px] text-slate-500 font-medium hidden sm:block">
-                {t.tagline}
-              </p>
+              <div className="text-[10px] sm:text-[11px] text-slate-500 font-medium leading-tight hidden sm:block mt-0.5">
+                <span>{language === 'si' ? 'කරුණාවන්ත, සහතිකලත්' : language === 'ta' ? 'அன்பான, சான்றளிக்கப்பட்ட' : 'Compassionate, Certified'}</span>
+                <span className="block">{language === 'si' ? 'වැඩිහිටි සහ රෝගී සාත්තු සේවය' : language === 'ta' ? 'முதியோர் සහ நோயாளி பராமரிப்பு' : 'Elderly & Patient Care in Sri Lanka'}</span>
+              </div>
             </div>
           </div>
 
           {/* Desktop Nav Links */}
-          <nav className="hidden lg:flex items-center gap-6 text-sm font-semibold text-slate-700">
-            <button
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="hover:text-blue-600 transition-colors cursor-pointer"
-            >
-              {t.nav.home}
-            </button>
+          <nav className="hidden lg:flex items-center gap-5 text-sm font-semibold text-slate-700">
             <button
               onClick={onNavigateToStore}
-              className="hover:text-blue-600 transition-colors cursor-pointer flex items-center gap-1.5 text-slate-900 font-bold"
+              className="cursor-pointer flex items-center gap-2 text-slate-900 font-bold px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border border-blue-200/80 shadow-2xs group transition-all"
             >
-              <ShoppingBag className="w-3.5 h-3.5 text-blue-600" />
-              <span>{t.nav.store}</span>
+              <div className="w-6 h-6 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs group-hover:scale-110 transition-transform">
+                <ShoppingBag className="w-3.5 h-3.5 text-white" />
+              </div>
+              <span className="inline-block animate-sway-x text-blue-900 font-black tracking-tight text-xs sm:text-sm">
+                {t.nav.store}
+              </span>
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
             </button>
             <button
               onClick={onNavigateToTracker}
-              className="hover:text-blue-600 transition-colors cursor-pointer"
+              className="hover:text-blue-600 transition-colors cursor-pointer text-xs sm:text-sm"
             >
               {t.nav.track}
             </button>
           </nav>
 
-          {/* Right Actions: Interactive Language Dropdown, Profile / Auth & Book CTA */}
+          {/* Right Actions: Book CTA in middle, Language Dropdown, Profile / Auth at the far right */}
           <div className="hidden sm:flex items-center gap-3">
+            {/* Book Now Button (In the Middle) */}
+            <button
+              onClick={onOpenBooking}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-blue-500/20 hover:shadow-lg transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
+            >
+              <Heart className="w-4 h-4 fill-white" />
+              <span>{t.nav.bookNow}</span>
+            </button>
+
             {/* Elegant Language Select Dropdown */}
             <div className="relative" ref={langDropdownRef}>
               <button
@@ -167,61 +179,73 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
             </div>
 
-            {/* Auth / Profile Button */}
+            {/* Auth / Profile Button (At the very end / kelawaratama with Google Profile Icon) */}
             {user ? (
               <button
                 onClick={onOpenProfile}
-                className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-900 text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-2xs"
+                className="px-3 py-1.5 rounded-xl border border-slate-200 hover:border-blue-300 bg-slate-50 hover:bg-blue-50/50 text-slate-900 text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-2xs"
+                title={user.name}
               >
-                <div className="w-6 h-6 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
-                  {user.name.charAt(0)}
-                </div>
-                <span className="max-w-[100px] truncate">{t.nav.myProfile}</span>
+                {user.photoURL ? (
+                  <img
+                    src={user.photoURL}
+                    alt={user.name}
+                    className="w-7 h-7 rounded-full object-cover border border-slate-300 shadow-2xs shrink-0"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
+                    {user.name.charAt(0)}
+                  </div>
+                )}
+                <span className="max-w-[110px] truncate">{user.name.split(' ')[0] || t.nav.myProfile}</span>
               </button>
             ) : (
               <button
                 onClick={onOpenAuth}
-                className="px-3.5 py-2 rounded-xl border border-slate-200 hover:border-blue-400 text-slate-700 hover:text-blue-600 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                className="px-3.5 py-2 rounded-xl border border-slate-200 hover:border-blue-400 bg-white hover:bg-blue-50/40 text-slate-700 hover:text-blue-600 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
               >
                 <LogIn className="w-3.5 h-3.5" />
                 <span>{t.nav.signIn}</span>
               </button>
             )}
-
-            {/* Book Now Button */}
-            <button
-              onClick={onOpenBooking}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-blue-500/20 hover:shadow-lg transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
-            >
-              <Heart className="w-4 h-4 fill-white" />
-              <span>{t.nav.bookNow}</span>
-            </button>
           </div>
 
           {/* Mobile Menu & Auth Quick Button */}
           <div className="flex items-center gap-2 sm:hidden">
+            <button
+              onClick={onOpenBooking}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-xl text-xs font-bold shadow-xs active:scale-95"
+            >
+              {t.nav.bookNow}
+            </button>
+
             {user ? (
               <button
                 onClick={onOpenProfile}
-                className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs font-bold"
+                className="w-8 h-8 rounded-full overflow-hidden border border-slate-300 flex items-center justify-center bg-blue-600 text-white text-xs font-bold shadow-xs"
+                title={user.name}
               >
-                {user.name.charAt(0)}
+                {user.photoURL ? (
+                  <img
+                    src={user.photoURL}
+                    alt={user.name}
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  user.name.charAt(0)
+                )}
               </button>
             ) : (
               <button
                 onClick={onOpenAuth}
-                className="p-2 text-slate-700 rounded-lg hover:bg-slate-100"
+                className="p-1.5 text-slate-700 rounded-xl border border-slate-200 hover:bg-slate-100"
               >
-                <LogIn className="w-5 h-5" />
+                <LogIn className="w-4 h-4" />
               </button>
             )}
 
-            <button
-              onClick={onOpenBooking}
-              className="bg-blue-600 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold"
-            >
-              {t.nav.bookNow}
-            </button>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-1.5 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100"
@@ -254,17 +278,31 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {user && (
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-slate-900">{user.name}</p>
-                <p className="text-[11px] text-slate-500">{user.email}</p>
+            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                {user.photoURL ? (
+                  <img
+                    src={user.photoURL}
+                    alt={user.name}
+                    className="w-9 h-9 rounded-full object-cover border border-slate-300 shadow-2xs"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold">
+                    {user.name.charAt(0)}
+                  </div>
+                )}
+                <div>
+                  <p className="text-xs font-bold text-slate-900">{user.name}</p>
+                  <p className="text-[11px] text-slate-500">{user.email}</p>
+                </div>
               </div>
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);
                   onOpenProfile();
                 }}
-                className="px-3 py-1 rounded-lg bg-blue-600 text-white text-xs font-bold"
+                className="px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-xs"
               >
                 {t.nav.myProfile}
               </button>
@@ -273,17 +311,17 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           <div className="flex flex-col gap-2 font-semibold text-slate-800 text-sm">
             <button
-              onClick={() => { setMobileMenuOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-              className="text-left py-2 border-b border-slate-100"
-            >
-              {t.nav.home}
-            </button>
-            <button
               onClick={() => { setMobileMenuOpen(false); onNavigateToStore(); }}
-              className="text-left py-2 border-b border-slate-100 font-bold text-slate-900 flex items-center gap-1.5"
+              className="text-left py-2.5 border-b border-slate-100 font-bold text-slate-900 flex items-center gap-2"
             >
-              <ShoppingBag className="w-4 h-4 text-blue-600" />
-              <span>{t.nav.store}</span>
+              <div className="w-5 h-5 rounded-md bg-blue-600 text-white flex items-center justify-center">
+                <ShoppingBag className="w-3 h-3 text-white" />
+              </div>
+              <span className="animate-sway-x text-blue-900">{t.nav.store}</span>
+              <span className="relative flex h-2 w-2 ml-1">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
             </button>
             <button
               onClick={() => { setMobileMenuOpen(false); onNavigateToTracker(); }}

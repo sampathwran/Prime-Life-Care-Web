@@ -95,6 +95,7 @@ export interface UserProfile {
   name: string;
   email: string;
   phone: string;
+  photoURL?: string;
   district?: string;
   address?: string;
   createdAt: string;

@@ -6,7 +6,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { X, Mail, Lock, User, Phone, Heart, CheckCircle2, ShieldAlert } from 'lucide-react';
 
 export const AuthModal: React.FC = () => {
-  const { isAuthModalOpen, closeAuthModal, login, register } = useAuth();
+  const { isAuthModalOpen, closeAuthModal, login, register, loginWithGoogle } = useAuth();
   const { language } = useLanguage();
 
   const [mode, setMode] = useState<'login' | 'register'>('login');
@@ -206,6 +206,42 @@ export const AuthModal: React.FC = () => {
               {loading ? 'Please wait...' : mode === 'login' ? t.loginBtn : t.registerBtn}
             </button>
           </form>
+
+          {/* Google Sign In Divider & Button */}
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-200"></div>
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-3 text-slate-400 font-bold">
+                {language === 'si' ? 'හෝ Google මඟින්' : language === 'ta' ? 'அல்லது Google மூலம்' : 'or with Google'}
+              </span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={async () => {
+              setLoading(true);
+              try {
+                await loginWithGoogle();
+              } catch (e: any) {
+                setError(e?.message || 'Google Sign-in failed');
+              } finally {
+                setLoading(false);
+              }
+            }}
+            disabled={loading}
+            className="w-full py-2.5 px-4 rounded-xl border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center justify-center gap-2.5 shadow-2xs transition-all cursor-pointer"
+          >
+            <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.87c2.26-2.09 3.67-5.17 3.67-9.15z"/>
+              <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.87-3.05c-1.08.72-2.45 1.16-4.06 1.16-3.13 0-5.78-2.11-6.73-4.96H1.25v3.15C3.25 21.36 7.34 24 12 24z"/>
+              <path fill="#FBBC05" d="M5.27 14.24A7.18 7.18 0 0 1 4.89 12c0-.78.14-1.53.38-2.24V6.61H1.25A11.967 11.967 0 0 0 0 12c0 1.92.45 3.74 1.25 5.39l4.02-3.15z"/>
+              <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.25 2.64 1.25 6.61l4.02 3.15c.95-2.85 3.6-4.96 6.73-4.96z"/>
+            </svg>
+            <span>{language === 'si' ? 'Google ගිණුමෙන් පිවිසෙන්න' : language === 'ta' ? 'Google மூலம் உள்நுழைக' : 'Continue with Google'}</span>
+          </button>
 
           {/* Quick Demo Login Pill */}
           <div className="mt-4 pt-4 border-t border-slate-100 text-center">
