@@ -9,6 +9,9 @@ interface AuthContextType {
   login: (email: string) => Promise<boolean>;
   loginWithGoogle: () => Promise<boolean>;
   register: (name: string, email: string, phone: string) => Promise<boolean>;
+  updateUserProfile: (data: Partial<UserProfile>) => Promise<boolean>;
+  markNotificationAsRead: (id: string) => void;
+  markAllNotificationsAsRead: () => void;
   logout: () => void;
   isAuthModalOpen: boolean;
   openAuthModal: (onSuccessCallback?: () => void) => void;
@@ -25,8 +28,58 @@ export const defaultDemoUser: UserProfile = {
   phone: '077 123 4567',
   photoURL: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=256',
   district: 'Colombo (කොළඹ)',
+  city: 'Nugegoda',
   address: 'No 24, Chapel Road, Nugegoda',
-  createdAt: '2026-09-15T10:00:00Z'
+  createdAt: '2026-09-15T10:00:00Z',
+  savedPatients: [
+    {
+      id: 'p_01',
+      name: 'Sunil Jayasinghe (තාත්තා)',
+      relation: 'Father',
+      age: 76,
+      gender: 'male',
+      mobility: 'Wheelchair Assisted (රෝද පුටුව)',
+      conditions: 'Hypertension, Post-Stroke Rehab, Daily Medication'
+    },
+    {
+      id: 'p_02',
+      name: 'Kusuma Jayasinghe (අම්මා)',
+      relation: 'Mother',
+      age: 72,
+      gender: 'female',
+      mobility: 'Walking Stick (සැරයටිය)',
+      conditions: 'Diabetes Type 2, Arthritis Care'
+    }
+  ],
+  notifications: [
+    {
+      id: 'notif_1',
+      title: 'සාත්තු සේවිකාව පැමිණෙමින් සිටී 🚗',
+      message: 'ඔබගේ වෙන්කිරීම (PLC-7821) සඳහා හෙද නිලධාරිනි නදීකා සිල්වා (RN) මේ වන විට ඔබගේ නිවස බලා ගමන් කරමින් සිටී.',
+      type: 'clinical',
+      timestamp: 'මිනිත්තු 10 කට පෙර',
+      isRead: false,
+      linkCode: 'PLC-7821'
+    },
+    {
+      id: 'notif_2',
+      title: 'දෛනික සෞඛ්‍ය වාර්තාව (Vitals Updated) 🩺',
+      message: 'ඊයේ දින රුධිර පීඩනය (BP: 125/82 mmHg) සහ රුධිර සීනි (RBS: 112 mg/dL) යාවත්කාලීන කර ඇත. තත්ත්වය යහපත් මට්ටමේ පවතී.',
+      type: 'clinical',
+      timestamp: 'පැය 3 කට පෙර',
+      isRead: false,
+      linkCode: 'PLC-7821'
+    },
+    {
+      id: 'notif_3',
+      title: 'උපකරණ බෙදාහැරීම සුදානම් (Dispatched) 📦',
+      message: 'ඔබ ඇණවුම් කළ Digital Blood Pressure Monitor (ORD-4102) කුරියර් සේවාව වෙත භාර දී ඇත.',
+      type: 'order',
+      timestamp: 'ඊයේ දින',
+      isRead: true,
+      linkCode: 'ORD-4102'
+    }
+  ]
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -55,9 +108,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       id: `usr_${Date.now()}`,
       name: formattedName,
       email: email.trim(),
-      phone: '077 123 4567',
+      phone: user?.phone || '077 123 4567',
       photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(formattedName)}&background=2563eb&color=fff&rounded=true&bold=true`,
-      district: 'Colombo (කොළඹ)',
+      district: user?.district || 'Colombo (කොළඹ)',
+      city: user?.city || 'Nugegoda',
+      address: user?.address || 'No 24, Chapel Road, Nugegoda',
+      savedPatients: user?.savedPatients || defaultDemoUser.savedPatients,
+      notifications: user?.notifications || defaultDemoUser.notifications,
       createdAt: new Date().toISOString()
     };
     setUser(loggedUser);
@@ -86,9 +143,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: gUser.uid,
         name: gUser.displayName || gUser.email?.split('@')[0] || 'Google User',
         email: gUser.email || '',
-        phone: gUser.phoneNumber || '077 123 4567',
+        phone: gUser.phoneNumber || user?.phone || '077 123 4567',
         photoURL: gUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(gUser.displayName || 'Google User')}&background=0D8ABC&color=fff&rounded=true`,
-        district: 'Colombo (කොළඹ)',
+        district: user?.district || 'Colombo (කොළඹ)',
+        city: user?.city || 'Nugegoda',
+        address: user?.address || 'No 24, Chapel Road, Nugegoda',
+        savedPatients: user?.savedPatients || defaultDemoUser.savedPatients,
+        notifications: user?.notifications || defaultDemoUser.notifications,
         createdAt: new Date().toISOString()
       };
 
@@ -116,9 +177,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: `usr_g_${Date.now()}`,
         name: 'Sampath Ranasinghe',
         email: 'sampathwran@gmail.com',
-        phone: '077 123 4567',
+        phone: user?.phone || '077 123 4567',
         photoURL: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=256',
-        district: 'Colombo (කොළඹ)',
+        district: user?.district || 'Colombo (කොළඹ)',
+        city: user?.city || 'Nugegoda',
+        address: user?.address || 'No 24, Chapel Road, Nugegoda',
+        savedPatients: user?.savedPatients || defaultDemoUser.savedPatients,
+        notifications: user?.notifications || defaultDemoUser.notifications,
         createdAt: new Date().toISOString()
       };
       setUser(fallbackUser);
@@ -140,6 +205,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       phone,
       photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=10b981&color=fff&rounded=true&bold=true`,
       district: 'Colombo (කොළඹ)',
+      city: 'Nugegoda',
+      address: 'No 24, Chapel Road, Nugegoda',
+      savedPatients: defaultDemoUser.savedPatients,
+      notifications: defaultDemoUser.notifications,
       createdAt: new Date().toISOString()
     };
     setUser(newUser);
@@ -150,6 +219,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setPostAuthCallback(null);
     }
     return true;
+  };
+
+  const updateUserProfile = async (data: Partial<UserProfile>): Promise<boolean> => {
+    if (!user) return false;
+    const updatedUser: UserProfile = {
+      ...user,
+      ...data
+    };
+    setUser(updatedUser);
+    localStorage.setItem('prime_life_care_user', JSON.stringify(updatedUser));
+
+    // Also sync to Cloud Firestore if initialized
+    try {
+      const { getFirestore, doc, setDoc } = await import('firebase/firestore');
+      const db = getFirestore(firebaseApp);
+      await setDoc(doc(db, 'users', updatedUser.id), updatedUser, { merge: true });
+    } catch (err) {
+      console.warn('Firestore user update warning:', err);
+    }
+    return true;
+  };
+
+  const markNotificationAsRead = (id: string) => {
+    if (!user || !user.notifications) return;
+    const updatedNotifications = user.notifications.map((n) =>
+      n.id === id ? { ...n, isRead: true } : n
+    );
+    updateUserProfile({ notifications: updatedNotifications });
+  };
+
+  const markAllNotificationsAsRead = () => {
+    if (!user || !user.notifications) return;
+    const updatedNotifications = user.notifications.map((n) => ({ ...n, isRead: true }));
+    updateUserProfile({ notifications: updatedNotifications });
   };
 
   const logout = () => {
@@ -178,6 +281,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         loginWithGoogle,
         register,
+        updateUserProfile,
+        markNotificationAsRead,
+        markAllNotificationsAsRead,
         logout,
         isAuthModalOpen,
         openAuthModal,

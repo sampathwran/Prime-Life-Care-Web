@@ -183,21 +183,26 @@ export const Navbar: React.FC<NavbarProps> = ({
             {user ? (
               <button
                 onClick={onOpenProfile}
-                className="px-3 py-1.5 rounded-xl border border-slate-200 hover:border-blue-300 bg-slate-50 hover:bg-blue-50/50 text-slate-900 text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-2xs"
+                className="relative px-3 py-1.5 rounded-xl border border-slate-200 hover:border-blue-300 bg-slate-50 hover:bg-blue-50/50 text-slate-900 text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-2xs group"
                 title={user.name}
               >
-                {user.photoURL ? (
-                  <img
-                    src={user.photoURL}
-                    alt={user.name}
-                    className="w-7 h-7 rounded-full object-cover border border-slate-300 shadow-2xs shrink-0"
-                    referrerPolicy="no-referrer"
-                  />
-                ) : (
-                  <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
-                    {user.name.charAt(0)}
-                  </div>
-                )}
+                <div className="relative">
+                  {user.photoURL ? (
+                    <img
+                      src={user.photoURL}
+                      alt={user.name}
+                      className="w-7 h-7 rounded-full object-cover border border-slate-300 shadow-2xs shrink-0"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
+                      {user.name.charAt(0)}
+                    </div>
+                  )}
+                  {user.notifications && user.notifications.some((n) => !n.isRead) && (
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-white animate-pulse" />
+                  )}
+                </div>
                 <span className="max-w-[110px] truncate">{user.name.split(' ')[0] || t.nav.myProfile}</span>
               </button>
             ) : (
@@ -223,18 +228,23 @@ export const Navbar: React.FC<NavbarProps> = ({
             {user ? (
               <button
                 onClick={onOpenProfile}
-                className="w-8 h-8 rounded-full overflow-hidden border border-slate-300 flex items-center justify-center bg-blue-600 text-white text-xs font-bold shadow-xs"
+                className="relative w-8 h-8 rounded-full border border-slate-300 flex items-center justify-center bg-blue-600 text-white text-xs font-bold shadow-xs"
                 title={user.name}
               >
-                {user.photoURL ? (
-                  <img
-                    src={user.photoURL}
-                    alt={user.name}
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
-                ) : (
-                  user.name.charAt(0)
+                <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center">
+                  {user.photoURL ? (
+                    <img
+                      src={user.photoURL}
+                      alt={user.name}
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    user.name.charAt(0)
+                  )}
+                </div>
+                {user.notifications && user.notifications.some((n) => !n.isRead) && (
+                  <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-white animate-pulse" />
                 )}
               </button>
             ) : (

@@ -90,6 +90,26 @@ export interface EquipmentOrder {
   createdAt: string;
 }
 
+export interface SavedPatient {
+  id: string;
+  name: string;
+  relation: string;
+  age: number;
+  gender: 'male' | 'female';
+  mobility: string;
+  conditions: string;
+}
+
+export interface UserNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'booking' | 'order' | 'clinical' | 'system';
+  timestamp: string;
+  isRead: boolean;
+  linkCode?: string;
+}
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -97,7 +117,10 @@ export interface UserProfile {
   phone: string;
   photoURL?: string;
   district?: string;
+  city?: string;
   address?: string;
+  savedPatients?: SavedPatient[];
+  notifications?: UserNotification[];
   createdAt: string;
 }
 

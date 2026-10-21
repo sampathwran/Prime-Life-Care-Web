@@ -303,6 +303,42 @@ export const BookingModal: React.FC<BookingModalProps> = ({
           {/* STEP 2: PATIENT DETAILS */}
           {currentStep === 2 && (
             <div className="space-y-4">
+              {/* Quick Select from Saved Family / Patient Profiles */}
+              {user?.savedPatients && user.savedPatients.length > 0 && (
+                <div className="p-3.5 rounded-2xl bg-blue-50/80 border border-blue-200/90 shadow-2xs">
+                  <span className="block text-[11px] font-bold text-blue-900 mb-1.5">
+                    {language === 'si' ? '⚡ සුරැකි පවුලේ සාමාජිකයෙකු තෝරාගන්න (1-Click Fill):' : '⚡ Quick-fill from saved family members:'}
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {user.savedPatients.map((sp) => (
+                      <button
+                        key={sp.id}
+                        type="button"
+                        onClick={() => {
+                          setPatientName(sp.name.split(' (')[0]);
+                          setPatientAge(sp.age);
+                          setPatientGender(sp.gender);
+                          if (sp.mobility.toLowerCase().includes('bedridden')) {
+                            setMobilityLevel('bedridden');
+                          } else if (sp.mobility.toLowerCase().includes('wheelchair')) {
+                            setMobilityLevel('wheelchair');
+                          } else if (sp.mobility.toLowerCase().includes('independent')) {
+                            setMobilityLevel('independent');
+                          } else {
+                            setMobilityLevel('partial_assistance');
+                          }
+                          setMedicalConditions(sp.conditions);
+                        }}
+                        className="px-2.5 py-1 rounded-xl bg-white hover:bg-blue-600 hover:text-white border border-blue-200 text-slate-800 text-xs font-semibold shadow-2xs transition-all cursor-pointer flex items-center gap-1"
+                      >
+                        <Heart className="w-3 h-3 text-red-500 fill-red-500" />
+                        <span>{sp.name} ({sp.relation})</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
                   {t.booking.patientName} *
