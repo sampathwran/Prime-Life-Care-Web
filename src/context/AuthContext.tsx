@@ -2,17 +2,30 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile } from '@/types';
-import { firebaseApp } from '@/lib/firebase';
+import { firebaseApp, auth, db, googleAuthProvider } from '@/lib/firebase';
+import {
+  onAuthStateChanged,
+  signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile,
+  signOut
+} from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 interface AuthContextType {
   user: UserProfile | null;
-  login: (email: string) => Promise<boolean>;
+  loading: boolean;
+  login: (email: string, password?: string) => Promise<boolean>;
   loginWithGoogle: () => Promise<boolean>;
-  register: (name: string, email: string, phone: string) => Promise<boolean>;
+  loginWithEmail: (email: string, password?: string) => Promise<boolean>;
+  register: (name: string, email: string, phone: string, password?: string) => Promise<boolean>;
+  registerWithEmail: (name: string, email: string, password: string, phone: string) => Promise<boolean>;
+  loginAsDemoUser: () => void;
   updateUserProfile: (data: Partial<UserProfile>) => Promise<boolean>;
   markNotificationAsRead: (id: string) => void;
   markAllNotificationsAsRead: () => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   isAuthModalOpen: boolean;
   openAuthModal: (onSuccessCallback?: () => void) => void;
   closeAuthModal: () => void;
@@ -84,80 +97,164 @@ export const defaultDemoUser: UserProfile = {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [postAuthCallback, setPostAuthCallback] = useState<(() => void) | null>(null);
 
+  // Synchronize with Firebase Auth state
   useEffect(() => {
+    // First, load from localStorage if previously stored
     const saved = localStorage.getItem('prime_life_care_user');
     if (saved) {
       try {
         setUser(JSON.parse(saved));
       } catch (e) {
-        console.error(e);
+        console.error('Error parsing local user:', e);
       }
-    } else {
-      // Initialize with demo user for seamless instant testing
-      setUser(defaultDemoUser);
-      localStorage.setItem('prime_life_care_user', JSON.stringify(defaultDemoUser));
     }
+
+    // Subscribe to Firebase Auth
+    const unsubscribe = onAuthStateChanged(auth, async (fUser) => {
+      if (fUser) {
+        try {
+          // Fetch user document from Firestore
+          const userDocRef = doc(db, 'users', fUser.uid);
+          const userDoc = await getDoc(userDocRef);
+
+          let profile: UserProfile;
+          if (userDoc.exists()) {
+            profile = userDoc.data() as UserProfile;
+          } else {
+            profile = {
+              id: fUser.uid,
+              name: fUser.displayName || fUser.email?.split('@')[0] || 'Prime Member',
+              email: fUser.email || '',
+              phone: fUser.phoneNumber || '',
+              photoURL: fUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(fUser.displayName || 'Member')}&background=0D8ABC&color=fff&rounded=true`,
+              district: 'Colombo (කොළඹ)',
+              city: 'Colombo',
+              address: '',
+              savedPatients: [],
+              notifications: [
+                {
+                  id: `notif_${Date.now()}`,
+                  title: 'සාදරයෙන් පිළිගනිමු! 🩺',
+                  message: 'Prime Life Care පවුලට ඔබව සාදරයෙන් පිළිගනිමු. ඔබගේ රෝගී සාත්තු සේවා සහ උපකරණ අවශ්‍යතා පහසුවෙන් මෙතැනින් ඉටුකරගත හැක.',
+                  type: 'system',
+                  timestamp: 'මීට සුළු මොහොතකට පෙර',
+                  isRead: false
+                }
+              ],
+              createdAt: new Date().toISOString()
+            };
+            await setDoc(userDocRef, profile, { merge: true });
+          }
+
+          setUser(profile);
+          localStorage.setItem('prime_life_care_user', JSON.stringify(profile));
+        } catch (err) {
+          console.warn('Firestore fetch user warning:', err);
+        }
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const login = async (email: string): Promise<boolean> => {
-    const formattedName = email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-    const loggedUser: UserProfile = {
-      id: `usr_${Date.now()}`,
-      name: formattedName,
-      email: email.trim(),
-      phone: user?.phone || '077 123 4567',
-      photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(formattedName)}&background=2563eb&color=fff&rounded=true&bold=true`,
-      district: user?.district || 'Colombo (කොළඹ)',
-      city: user?.city || 'Nugegoda',
-      address: user?.address || 'No 24, Chapel Road, Nugegoda',
-      savedPatients: user?.savedPatients || defaultDemoUser.savedPatients,
-      notifications: user?.notifications || defaultDemoUser.notifications,
-      createdAt: new Date().toISOString()
-    };
-    setUser(loggedUser);
-    localStorage.setItem('prime_life_care_user', JSON.stringify(loggedUser));
-    setIsAuthModalOpen(false);
-    if (postAuthCallback) {
-      postAuthCallback();
-      setPostAuthCallback(null);
-    }
-    return true;
-  };
-
+  // Google Sign-In / Sign-Up (Triggers device Gmail selector)
   const loginWithGoogle = async (): Promise<boolean> => {
     try {
-      const { getAuth, GoogleAuthProvider, signInWithPopup } = await import('firebase/auth');
-      const auth = getAuth(firebaseApp);
-      const provider = new GoogleAuthProvider();
-      // Forces device (Android/iOS/PC) to auto-suggest and display all logged in Gmail accounts
-      provider.setCustomParameters({
-        prompt: 'select_account'
-      });
-      const result = await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, googleAuthProvider);
       const gUser = result.user;
 
+      // Sync with Firestore
+      const userDocRef = doc(db, 'users', gUser.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      let profile: UserProfile;
+      if (userDoc.exists()) {
+        profile = userDoc.data() as UserProfile;
+      } else {
+        profile = {
+          id: gUser.uid,
+          name: gUser.displayName || gUser.email?.split('@')[0] || 'Prime Member',
+          email: gUser.email || '',
+          phone: gUser.phoneNumber || '',
+          photoURL: gUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(gUser.displayName || 'Member')}&background=0D8ABC&color=fff&rounded=true`,
+          district: 'Colombo (කොළඹ)',
+          city: 'Colombo',
+          address: '',
+          savedPatients: [],
+          notifications: [
+            {
+              id: `notif_${Date.now()}`,
+              title: 'සාදරයෙන් පිළිගනිමු! 🩺',
+              message: 'Prime Life Care පවුලට ඔබව සාදරයෙන් පිළිගනිමු. ඔබගේ රෝගී සාත්තු සේවා සහ උපකරණ අවශ්‍යතා පහසුවෙන් මෙතැනින් ඉටුකරගත හැක.',
+              type: 'system',
+              timestamp: 'මීට සුළු මොහොතකට පෙර',
+              isRead: false
+            }
+          ],
+          createdAt: new Date().toISOString()
+        };
+        await setDoc(userDocRef, profile, { merge: true });
+      }
+
+      setUser(profile);
+      localStorage.setItem('prime_life_care_user', JSON.stringify(profile));
+      setIsAuthModalOpen(false);
+
+      if (postAuthCallback) {
+        postAuthCallback();
+        setPostAuthCallback(null);
+      }
+      return true;
+    } catch (err: any) {
+      console.error('Google Sign-In Error:', err);
+      throw err;
+    }
+  };
+
+  // Email & Password Registration
+  const registerWithEmail = async (name: string, email: string, password: string, phone: string): Promise<boolean> => {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
+      const fUser = userCredential.user;
+
+      try {
+        await updateProfile(fUser, {
+          displayName: name.trim()
+        });
+      } catch (e) {
+        console.warn('Profile update warning:', e);
+      }
+
       const profile: UserProfile = {
-        id: gUser.uid,
-        name: gUser.displayName || gUser.email?.split('@')[0] || 'Google User',
-        email: gUser.email || '',
-        phone: gUser.phoneNumber || user?.phone || '077 123 4567',
-        photoURL: gUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(gUser.displayName || 'Google User')}&background=0D8ABC&color=fff&rounded=true`,
-        district: user?.district || 'Colombo (කොළඹ)',
-        city: user?.city || 'Nugegoda',
-        address: user?.address || 'No 24, Chapel Road, Nugegoda',
-        savedPatients: user?.savedPatients || defaultDemoUser.savedPatients,
-        notifications: user?.notifications || defaultDemoUser.notifications,
+        id: fUser.uid,
+        name: name.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+        photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(name.trim())}&background=10b981&color=fff&rounded=true&bold=true`,
+        district: 'Colombo (කොළඹ)',
+        city: 'Colombo',
+        address: '',
+        savedPatients: [],
+        notifications: [
+          {
+            id: `notif_${Date.now()}`,
+            title: 'ගිණුම සාර්ථකව සාදන ලදී! 🎉',
+            message: 'Prime Life Care පවුලට ඔබව සාදරයෙන් පිළිගනිමු. ඔබගේ රෝගී සාත්තු සේවා සහ උපකරණ අවශ්‍යතා පහසුවෙන් මෙතැනින් ඉටුකරගත හැක.',
+            type: 'system',
+            timestamp: 'මීට සුළු මොහොතකට පෙර',
+            isRead: false
+          }
+        ],
         createdAt: new Date().toISOString()
       };
 
-      // Save/update user profile in Firestore
       try {
-        const { getFirestore, doc, setDoc } = await import('firebase/firestore');
-        const db = getFirestore(firebaseApp);
-        await setDoc(doc(db, 'users', profile.id), profile, { merge: true });
+        await setDoc(doc(db, 'users', fUser.uid), profile, { merge: true });
       } catch (err) {
         console.warn('Firestore user save warning:', err);
       }
@@ -165,39 +262,91 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(profile);
       localStorage.setItem('prime_life_care_user', JSON.stringify(profile));
       setIsAuthModalOpen(false);
+
       if (postAuthCallback) {
         postAuthCallback();
         setPostAuthCallback(null);
       }
       return true;
     } catch (err: any) {
-      console.warn('Google popup auth fallback:', err);
-      // Fallback for popup blocked or offline instant test with real Google avatar
-      const fallbackUser: UserProfile = {
-        id: `usr_g_${Date.now()}`,
-        name: 'Sampath Ranasinghe',
-        email: 'sampathwran@gmail.com',
-        phone: user?.phone || '077 123 4567',
-        photoURL: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=256',
-        district: user?.district || 'Colombo (කොළඹ)',
-        city: user?.city || 'Nugegoda',
-        address: user?.address || 'No 24, Chapel Road, Nugegoda',
-        savedPatients: user?.savedPatients || defaultDemoUser.savedPatients,
-        notifications: user?.notifications || defaultDemoUser.notifications,
-        createdAt: new Date().toISOString()
-      };
-      setUser(fallbackUser);
-      localStorage.setItem('prime_life_care_user', JSON.stringify(fallbackUser));
+      console.error('Registration Error:', err);
+      throw err;
+    }
+  };
+
+  // Email & Password Login
+  const loginWithEmail = async (email: string, password?: string): Promise<boolean> => {
+    try {
+      if (password) {
+        const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
+        const fUser = userCredential.user;
+
+        const userDocRef = doc(db, 'users', fUser.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        let profile: UserProfile;
+        if (userDoc.exists()) {
+          profile = userDoc.data() as UserProfile;
+        } else {
+          profile = {
+            id: fUser.uid,
+            name: fUser.displayName || email.split('@')[0],
+            email: email.trim(),
+            phone: '077 123 4567',
+            photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(fUser.displayName || email)}&background=2563eb&color=fff&rounded=true&bold=true`,
+            district: 'Colombo (කොළඹ)',
+            city: 'Colombo',
+            address: '',
+            savedPatients: [],
+            notifications: [],
+            createdAt: new Date().toISOString()
+          };
+          await setDoc(userDocRef, profile, { merge: true });
+        }
+
+        setUser(profile);
+        localStorage.setItem('prime_life_care_user', JSON.stringify(profile));
+      } else {
+        // Fallback for simple email without password
+        const formattedName = email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+        const profile: UserProfile = {
+          id: `usr_${Date.now()}`,
+          name: formattedName,
+          email: email.trim(),
+          phone: '077 123 4567',
+          photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(formattedName)}&background=2563eb&color=fff&rounded=true&bold=true`,
+          district: 'Colombo (කොළඹ)',
+          city: 'Colombo',
+          address: '',
+          savedPatients: [],
+          notifications: [],
+          createdAt: new Date().toISOString()
+        };
+        setUser(profile);
+        localStorage.setItem('prime_life_care_user', JSON.stringify(profile));
+      }
+
       setIsAuthModalOpen(false);
       if (postAuthCallback) {
         postAuthCallback();
         setPostAuthCallback(null);
       }
       return true;
+    } catch (err: any) {
+      console.error('Login Error:', err);
+      throw err;
     }
   };
 
-  const register = async (name: string, email: string, phone: string): Promise<boolean> => {
+  // Helper Aliases for backward compatibility
+  const login = async (email: string, password?: string): Promise<boolean> => {
+    return loginWithEmail(email, password);
+  };
+
+  const register = async (name: string, email: string, phone: string, password?: string): Promise<boolean> => {
+    if (password) {
+      return registerWithEmail(name, email, password, phone);
+    }
     const newUser: UserProfile = {
       id: `usr_${Date.now()}`,
       name,
@@ -205,10 +354,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       phone,
       photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=10b981&color=fff&rounded=true&bold=true`,
       district: 'Colombo (කොළඹ)',
-      city: 'Nugegoda',
-      address: 'No 24, Chapel Road, Nugegoda',
-      savedPatients: defaultDemoUser.savedPatients,
-      notifications: defaultDemoUser.notifications,
+      city: 'Colombo',
+      address: '',
+      savedPatients: [],
+      notifications: [],
       createdAt: new Date().toISOString()
     };
     setUser(newUser);
@@ -221,6 +370,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return true;
   };
 
+  // Demo user login for testing
+  const loginAsDemoUser = () => {
+    setUser(defaultDemoUser);
+    localStorage.setItem('prime_life_care_user', JSON.stringify(defaultDemoUser));
+    setIsAuthModalOpen(false);
+  };
+
+  // Update Profile
   const updateUserProfile = async (data: Partial<UserProfile>): Promise<boolean> => {
     if (!user) return false;
     const updatedUser: UserProfile = {
@@ -230,11 +387,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(updatedUser);
     localStorage.setItem('prime_life_care_user', JSON.stringify(updatedUser));
 
-    // Also sync to Cloud Firestore if initialized
     try {
-      const { getFirestore, doc, setDoc } = await import('firebase/firestore');
-      const db = getFirestore(firebaseApp);
-      await setDoc(doc(db, 'users', updatedUser.id), updatedUser, { merge: true });
+      const userDocRef = doc(db, 'users', updatedUser.id);
+      await setDoc(userDocRef, updatedUser, { merge: true });
     } catch (err) {
       console.warn('Firestore user update warning:', err);
     }
@@ -255,7 +410,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     updateUserProfile({ notifications: updatedNotifications });
   };
 
-  const logout = () => {
+  // Sign out
+  const logout = async () => {
+    try {
+      await signOut(auth);
+    } catch (e) {
+      console.warn('Firebase signout warning:', e);
+    }
     setUser(null);
     localStorage.removeItem('prime_life_care_user');
   };
@@ -278,9 +439,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider
       value={{
         user,
+        loading,
         login,
         loginWithGoogle,
+        loginWithEmail,
         register,
+        registerWithEmail,
+        loginAsDemoUser,
         updateUserProfile,
         markNotificationAsRead,
         markAllNotificationsAsRead,
