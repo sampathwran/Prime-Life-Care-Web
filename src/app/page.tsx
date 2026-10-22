@@ -182,17 +182,11 @@ export default function Home() {
   const [selectedTierForBooking, setSelectedTierForBooking] = useState<StaffTierId>('nvq_4_caregiver');
 
   const handleOpenBooking = (service?: ServiceItem, tierId?: StaffTierId) => {
-    if (!user) {
-      openAuthModal(() => {
-        setSelectedServiceForBooking(service || null);
-        if (tierId) setSelectedTierForBooking(tierId);
-        setIsBookingOpen(true);
-      });
-      return;
-    }
-    setSelectedServiceForBooking(service || null);
-    if (tierId) setSelectedTierForBooking(tierId);
-    setIsBookingOpen(true);
+    const params = new URLSearchParams();
+    if (service) params.set('service', service.id);
+    if (tierId) params.set('tier', tierId);
+    const queryString = params.toString();
+    router.push(queryString ? `/booking?${queryString}` : '/booking');
   };
 
   const handleBookingSubmitted = (newBooking: BookingSubmission) => {

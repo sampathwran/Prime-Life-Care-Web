@@ -312,12 +312,12 @@ export default function StorePage() {
     <div className="min-h-screen flex flex-col bg-slate-50">
       {/* Header with Navigation */}
       <Navbar
-        onOpenBooking={() => setIsBookingOpen(true)}
+        onOpenBooking={() => router.push('/booking')}
         onNavigateToServices={() => { window.location.href = '/#services'; }}
         onNavigateToStore={() => {}}
         onNavigateToTrust={() => { window.location.href = '/#trust'; }}
         onNavigateToTracker={() => { window.location.href = '/#tracker'; }}
-        onOpenProfile={() => setIsProfileOpen(true)}
+        onOpenProfile={() => router.push('/profile')}
         onOpenAuth={() => openAuthModal()}
       />
 

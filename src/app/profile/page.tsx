@@ -71,6 +71,7 @@ export default function ProfilePage() {
   // Modals state
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [bookingPrefillPatient, setBookingPrefillPatient] = useState<SavedPatient | null>(null);
+  const [showSignOutModal, setShowSignOutModal] = useState(false);
 
   // Edit Profile Form State
   const [name, setName] = useState(user?.name || '');
@@ -266,6 +267,10 @@ export default function ProfilePage() {
       tabNotifications: 'දැනුම්දීම් (Notifications)',
       tabEmergency: '24/7 හදිසි සහන (Emergency)',
       signOut: 'ගිණුමෙන් ඉවත් වන්න (Sign Out)',
+      confirmSignOutTitle: 'ගිණුමෙන් ඉවත් වීම තහවුරු කරන්න',
+      confirmSignOutMessage: 'ඔබට සැබවින්ම Prime Life Care ගිණුමෙන් ඉවත් වීමට අවශ්‍යද? ඔබගේ සක්‍රිය Booking සහ විස්තර සුරක්ෂිතව පවතිනු ඇත.',
+      confirmSignOutYes: 'ඔව්, ඉවත් වන්න',
+      confirmSignOutCancel: 'නැත, රැඳී සිටින්න',
 
       // Hotline Sidebar Card
       hotlineHeader: 'Prime Life Care සහන සේවය',
@@ -409,6 +414,10 @@ export default function ProfilePage() {
       tabNotifications: 'Notifications',
       tabEmergency: '24/7 Emergency',
       signOut: 'Sign Out',
+      confirmSignOutTitle: 'Confirm Sign Out',
+      confirmSignOutMessage: 'Are you sure you want to sign out of your Prime Life Care account? Your active bookings and profile details will remain safely saved.',
+      confirmSignOutYes: 'Yes, Sign Out',
+      confirmSignOutCancel: 'No, Stay Signed In',
 
       // Hotline Sidebar Card
       hotlineHeader: 'Prime Life Care Support',
@@ -552,6 +561,10 @@ export default function ProfilePage() {
       tabNotifications: 'அறிவிப்புகள் (Notifications)',
       tabEmergency: 'அவசர உதவி (Emergency)',
       signOut: 'வெளியேறு (Sign Out)',
+      confirmSignOutTitle: 'வெளியேறுவதை உறுதிப்படுத்தவும்',
+      confirmSignOutMessage: 'உங்கள் Prime Life Care கணக்கிலிருந்து வெளியேற விரும்புகிறீர்களா? உங்கள் முன்பதிவுகள் பாதுகாப்பாக இருக்கும்.',
+      confirmSignOutYes: 'ஆம், வெளியேறு',
+      confirmSignOutCancel: 'இல்லை, உள்நுழைந்திரு',
 
       // Hotline Sidebar Card
       hotlineHeader: 'Prime Life Care உதவி',
@@ -729,8 +742,9 @@ export default function ProfilePage() {
   };
 
   const handleOpenBookingForPatient = (patient: SavedPatient) => {
-    setBookingPrefillPatient(patient);
-    setIsBookingModalOpen(true);
+    router.push(
+      `/booking?patient=${encodeURIComponent(patient.name)}&patientAge=${patient.age}&patientGender=${patient.gender}&patientConditions=${encodeURIComponent(patient.conditions || '')}&patientMobility=${encodeURIComponent(patient.mobility || '')}`
+    );
   };
 
   const unreadNotificationsCount = user?.notifications?.filter((n) => !n.isRead).length || 0;
@@ -782,7 +796,7 @@ export default function ProfilePage() {
       
       {/* Top Navbar */}
       <Navbar
-        onOpenBooking={() => setIsBookingModalOpen(true)}
+        onOpenBooking={() => router.push('/booking')}
         onNavigateToStore={() => router.push('/store')}
         onNavigateToTracker={() => router.push('/#tracker')}
         onOpenProfile={() => {}}
@@ -813,7 +827,7 @@ export default function ProfilePage() {
             {/* Quick Action Button */}
             <div className="flex items-center gap-3">
               <button
-                onClick={() => setIsBookingModalOpen(true)}
+                onClick={() => router.push('/booking')}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-blue-500/20 hover:shadow-lg transition-all active:scale-95 cursor-pointer flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
@@ -1080,10 +1094,7 @@ export default function ProfilePage() {
                 <div className="pt-2 border-t border-slate-100">
                   <button
                     type="button"
-                    onClick={() => {
-                      logout();
-                      router.push('/');
-                    }}
+                    onClick={() => setShowSignOutModal(true)}
                     className="w-full p-3 rounded-2xl font-bold text-xs sm:text-sm text-slate-500 hover:text-red-600 hover:bg-red-50 transition-all flex items-center gap-3 cursor-pointer"
                   >
                     <LogOut className="w-4 h-4" />
@@ -1173,7 +1184,7 @@ export default function ProfilePage() {
                         {t.noBookingsSub}
                       </p>
                       <button
-                        onClick={() => setIsBookingModalOpen(true)}
+                        onClick={() => router.push('/booking')}
                         className="mt-4 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-all cursor-pointer shadow-xs"
                       >
                         {t.newBookingBtn}
@@ -1909,6 +1920,43 @@ export default function ProfilePage() {
         )}
 
       </main>
+
+      {/* Sign Out Confirmation Modal */}
+      {showSignOutModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 p-6 sm:p-7 relative animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-14 h-14 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto mb-4 border border-red-100 shadow-xs">
+              <LogOut className="w-7 h-7" />
+            </div>
+            <h3 className="text-xl font-black text-slate-900 text-center mb-2">
+              {t.confirmSignOutTitle}
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-600 text-center leading-relaxed mb-6">
+              {t.confirmSignOutMessage}
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setShowSignOutModal(false)}
+                className="w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm text-slate-700 bg-slate-100 hover:bg-slate-200 transition-all cursor-pointer"
+              >
+                {t.confirmSignOutCancel}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSignOutModal(false);
+                  logout();
+                  router.push('/');
+                }}
+                className="w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-red-600 hover:bg-red-700 shadow-md shadow-red-500/20 transition-all cursor-pointer"
+              >
+                {t.confirmSignOutYes}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Global Booking Modal */}
       <BookingModal

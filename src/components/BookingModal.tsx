@@ -182,12 +182,15 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         {/* Header - Clinical Slate */}
         <div className="bg-slate-900 text-white p-6 relative">
           <button
+            type="button"
             onClick={resetAndClose}
-            className="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+            className="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/15 hover:bg-red-600 text-white font-bold text-xs transition-all border border-white/20 shadow-xs cursor-pointer"
+            title="Close"
           >
-            <X className="w-6 h-6" />
+            <X className="w-4 h-4" />
+            <span>{language === 'si' ? 'වසන්න' : language === 'ta' ? 'மூடு' : 'Close'}</span>
           </button>
-          <div className="flex items-center gap-2 mb-1 text-slate-300 text-xs font-bold uppercase tracking-wider">
+          <div className="flex items-center gap-2 mb-1 text-slate-300 text-xs font-bold uppercase tracking-wider pr-20">
             <img src="/logo.png" alt="Logo" className="w-5 h-5 rounded-full bg-white object-contain p-0.5" />
             <span>Prime Life Care Dispatch Portal</span>
           </div>

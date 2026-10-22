@@ -127,13 +127,13 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Right Actions: Book CTA in middle, Language Dropdown, Profile / Auth at the far right */}
           <div className="hidden sm:flex items-center gap-3">
             {/* Book Now Button (In the Middle) */}
-            <button
-              onClick={onOpenBooking}
+            <Link
+              href="/booking"
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-blue-500/20 hover:shadow-lg transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
             >
               <Heart className="w-4 h-4 fill-white" />
               <span>{t.nav.bookNow}</span>
-            </button>
+            </Link>
 
             {/* Elegant Language Select Dropdown */}
             <div className="relative" ref={langDropdownRef}>
@@ -219,12 +219,12 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Mobile Menu & Auth Quick Button */}
           <div className="flex items-center gap-2 sm:hidden">
-            <button
-              onClick={onOpenBooking}
+            <Link
+              href="/booking"
               className="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-xl text-xs font-bold shadow-xs active:scale-95"
             >
               {t.nav.bookNow}
-            </button>
+            </Link>
 
             {user ? (
               <Link
