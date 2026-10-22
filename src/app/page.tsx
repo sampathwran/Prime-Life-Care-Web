@@ -17,7 +17,12 @@ import { initialServices } from '@/data/services';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { ServiceItem, BookingSubmission, PaymentRecord, EquipmentOrder, StaffTierId } from '@/types';
-import { fetchUserBookingsFromFirestore, fetchUserOrdersFromFirestore } from '@/lib/firestoreService';
+import {
+  fetchUserBookingsFromFirestore,
+  fetchUserOrdersFromFirestore,
+  subscribeToUserBookings,
+  subscribeToUserOrders
+} from '@/lib/firestoreService';
 import { Phone, MessageCircle, ShoppingBag, ArrowRight, Truck } from 'lucide-react';
 
 export default function Home() {
@@ -28,152 +33,50 @@ export default function Home() {
   // Dynamic Services state
   const [services] = useState<ServiceItem[]>(initialServices);
   
-  // Bookings state (linked to profile)
-  const [bookings, setBookings] = useState<BookingSubmission[]>([
-    {
-      id: 'demo_1',
-      userId: 'usr_rohan_01',
-      bookingCode: 'PLC-2026-1024',
-      serviceId: 'day_care_12h',
-      serviceName: '12-Hour Day Shift Care (NVQ 4)',
-      staffTierId: 'nvq_4_caregiver',
-      staffTierName: 'NVQ Level 4 Certified Aide',
-      shiftType: '12h_day',
-      priceLKR: 4500,
-      patientName: 'Mrs. Jayasinghe (Mother)',
-      patientAge: 78,
-      patientGender: 'female',
-      mobilityLevel: 'partial_assistance',
-      medicalConditions: 'Hypertension, Mild Arthritis',
-      district: 'Colombo (කොළඹ)',
-      city: 'Nugegoda',
-      address: 'No 24, Chapel Road, Nugegoda',
-      contactName: 'Mr. Rohan Jayasinghe',
-      contactPhone: '077 123 4567',
-      contactEmail: 'rohan.j@gmail.com',
-      startDate: '2026-10-12',
-      durationDays: 14,
-      totalCostLKR: 63000,
-      status: 'caregiver_assigned',
-      paymentStatus: 'fully_paid',
-      assignedCaregiverName: 'Sister K. Chamila (Certified NVQ 4 Aide)',
-      createdAt: '2026-10-10T08:30:00Z'
-    },
-    {
-      id: 'demo_2',
-      userId: 'usr_rohan_01',
-      bookingCode: 'PLC-2026-2048',
-      serviceId: 'live_in_24h',
-      serviceName: '24-Hour Live-in Care (NVQ 5)',
-      staffTierId: 'nvq_5_nurse',
-      staffTierName: 'NVQ Level 5 Senior Nurse',
-      shiftType: '24h_full',
-      priceLKR: 7000,
-      patientName: 'Mr. Dharmadasa (Father-in-law)',
-      patientAge: 82,
-      patientGender: 'male',
-      mobilityLevel: 'bedridden',
-      medicalConditions: 'Post-Stroke Recovery, Catheter care',
-      district: 'Gampaha (ගම්පහ)',
-      city: 'Kelaniya',
-      address: 'No 18/A, Station Road, Kelaniya',
-      contactName: 'Mr. Rohan Jayasinghe',
-      contactPhone: '077 123 4567',
-      contactEmail: 'rohan.j@gmail.com',
-      startDate: '2026-10-11',
-      durationDays: 30,
-      totalCostLKR: 210000,
-      status: 'in_progress',
-      paymentStatus: 'advance_paid',
-      assignedCaregiverName: 'Mr. Sunimal Perera (Senior NVQ 5 Nurse)',
-      createdAt: '2026-10-09T14:15:00Z'
-    }
-  ]);
+  // Bookings state (Loaded Live from Firestore)
+  const [bookings, setBookings] = useState<BookingSubmission[]>([]);
 
-  // Equipment Orders State
-  const [orders, setOrders] = useState<EquipmentOrder[]>([
-    {
-      id: 'ord_demo_1',
-      orderCode: 'ORD-2026-1049',
-      userId: 'usr_rohan_01',
-      items: [
-        {
-          itemId: 'air_mattress_pump',
-          name: 'Anti-Bedsore Ripple Air Mattress with Pump',
-          quantity: 1,
-          priceLKR: 14500
-        }
-      ],
-      totalAmountLKR: 14500,
-      paymentMethod: 'cod',
-      deliveryAddress: 'No 24, Chapel Road, Nugegoda',
-      district: 'Colombo (කොළඹ)',
-      contactName: 'Rohan Jayasinghe',
-      contactPhone: '077 123 4567',
-      status: 'dispatched',
-      createdAt: '2026-10-10T09:15:00Z'
-    }
-  ]);
+  // Equipment Orders State (Loaded Live from Firestore)
+  const [orders, setOrders] = useState<EquipmentOrder[]>([]);
 
   // Payment History State
-  const [payments, setPayments] = useState<PaymentRecord[]>([
-    {
-      id: 'pay_01',
-      invoiceNumber: 'INV-2026-1024',
-      bookingCode: 'PLC-2026-1024',
-      serviceName: '12-Hour Day Shift Care (NVQ 4 Tier - 14 Days)',
-      amountLKR: 63000,
-      paymentDate: '2026-10-10',
-      paymentMethod: 'bank_transfer',
-      status: 'paid'
-    },
-    {
-      id: 'pay_02',
-      invoiceNumber: 'INV-2026-2048',
-      bookingCode: 'PLC-2026-2048',
-      serviceName: '24-Hour Live-in Care (NVQ 5 Tier - Advance)',
-      amountLKR: 105000,
-      paymentDate: '2026-10-09',
-      paymentMethod: 'credit_card',
-      status: 'paid'
-    },
-    {
-      id: 'pay_03',
-      invoiceNumber: 'INV-2026-1049',
-      bookingCode: 'ORD-2026-1049',
-      serviceName: 'Medical Equipment: Anti-Bedsore Ripple Air Mattress',
-      amountLKR: 14500,
-      paymentDate: '2026-10-10',
-      paymentMethod: 'cod',
-      status: 'paid'
-    }
-  ]);
+  const [payments, setPayments] = useState<PaymentRecord[]>([]);
 
-  // Sync with Firestore Cloud when logged in
+  // Sync with Firestore Cloud when logged in (Real-time)
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setBookings([]);
+      setOrders([]);
+      setPayments([]);
+      return;
+    }
     
-    // Fetch user's real bookings
-    fetchUserBookingsFromFirestore(user.id).then((cloudBookings) => {
-      if (cloudBookings.length > 0) {
-        setBookings((prev) => {
-          const cloudCodes = new Set(cloudBookings.map((b) => b.bookingCode));
-          const filteredPrev = prev.filter((b) => !cloudCodes.has(b.bookingCode));
-          return [...cloudBookings, ...filteredPrev];
-        });
-      }
-    }).catch((err) => console.warn('[Firestore] Bookings sync fallback:', err));
+    // Subscribe to user's real bookings
+    const unsubBookings = subscribeToUserBookings(user.id, (cloudBookings) => {
+      setBookings(cloudBookings);
 
-    // Fetch user's real equipment orders
-    fetchUserOrdersFromFirestore(user.id).then((cloudOrders) => {
-      if (cloudOrders.length > 0) {
-        setOrders((prev) => {
-          const cloudCodes = new Set(cloudOrders.map((o) => o.orderCode));
-          const filteredPrev = prev.filter((o) => !cloudCodes.has(o.orderCode));
-          return [...cloudOrders, ...filteredPrev];
-        });
-      }
-    }).catch((err) => console.warn('[Firestore] Orders sync fallback:', err));
+      const generatedPayments: PaymentRecord[] = cloudBookings.map((b) => ({
+        id: `pay_${b.bookingCode}`,
+        invoiceNumber: `INV-${b.bookingCode}`,
+        bookingCode: b.bookingCode,
+        serviceName: `${b.serviceName} (${b.staffTierName || 'Care'} - ${b.durationDays} Days)`,
+        amountLKR: b.totalCostLKR || b.priceLKR,
+        paymentDate: b.startDate || b.createdAt.split('T')[0],
+        paymentMethod: 'cash_on_duty',
+        status: b.paymentStatus === 'fully_paid' ? 'paid' : b.paymentStatus === 'advance_paid' ? 'paid' : 'due'
+      }));
+      setPayments(generatedPayments);
+    });
+
+    // Subscribe to user's real equipment orders
+    const unsubOrders = subscribeToUserOrders(user.id, (cloudOrders) => {
+      setOrders(cloudOrders);
+    });
+
+    return () => {
+      unsubBookings();
+      unsubOrders();
+    };
   }, [user]);
 
   // Modals state

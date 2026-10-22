@@ -22,6 +22,10 @@ export async function saveBookingToFirestore(booking: BookingSubmission): Promis
     const docRef = doc(db, 'bookings', booking.bookingCode);
     await setDoc(docRef, {
       ...booking,
+      mobility: booking.mobilityLevel || 'partial',
+      mobilityLevel: booking.mobilityLevel || 'partial',
+      shiftHours: booking.shiftType === '24h_full' ? 24 : 12,
+      pricePerDayLKR: booking.priceLKR,
       updatedAt: new Date().toISOString()
     });
     console.log('[Firestore] Booking saved successfully:', booking.bookingCode);
@@ -104,11 +108,37 @@ export async function fetchUserBookingsFromFirestore(userId: string): Promise<Bo
       where('userId', '==', userId)
     );
     const snap = await getDocs(q);
-    return snap.docs.map(d => d.data() as BookingSubmission);
+    const list = snap.docs.map(d => d.data() as BookingSubmission);
+    list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return list;
   } catch (error) {
     console.error('[Firestore] Error fetching user bookings:', error);
     return [];
   }
+}
+
+/**
+ * Real-time listener for all bookings belonging to a user
+ */
+export function subscribeToUserBookings(
+  userId: string,
+  onUpdate: (bookings: BookingSubmission[]) => void
+): () => void {
+  const q = query(
+    collection(db, 'bookings'),
+    where('userId', '==', userId)
+  );
+  return onSnapshot(
+    q,
+    (snap) => {
+      const list = snap.docs.map((d) => d.data() as BookingSubmission);
+      list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      onUpdate(list);
+    },
+    (err) => {
+      console.warn('[Firestore] Realtime user bookings sync error:', err);
+    }
+  );
 }
 
 // ======================== EQUIPMENT ORDERS ========================
@@ -143,9 +173,35 @@ export async function fetchUserOrdersFromFirestore(userId: string): Promise<Equi
       where('userId', '==', userId)
     );
     const snap = await getDocs(q);
-    return snap.docs.map(d => d.data() as EquipmentOrder);
+    const list = snap.docs.map(d => d.data() as EquipmentOrder);
+    list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return list;
   } catch (error) {
     console.error('[Firestore] Error fetching user orders:', error);
     return [];
   }
+}
+
+/**
+ * Real-time listener for all orders belonging to a user
+ */
+export function subscribeToUserOrders(
+  userId: string,
+  onUpdate: (orders: EquipmentOrder[]) => void
+): () => void {
+  const q = query(
+    collection(db, 'orders'),
+    where('userId', '==', userId)
+  );
+  return onSnapshot(
+    q,
+    (snap) => {
+      const list = snap.docs.map((d) => d.data() as EquipmentOrder);
+      list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      onUpdate(list);
+    },
+    (err) => {
+      console.warn('[Firestore] Realtime user orders sync error:', err);
+    }
+  );
 }

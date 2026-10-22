@@ -11,7 +11,12 @@ import { AuthModal } from '@/components/AuthModal';
 import { BookingModal } from '@/components/BookingModal';
 import { BookingSubmission, EquipmentOrder, PaymentRecord, SavedPatient } from '@/types';
 import { districtList } from '@/data/services';
-import { fetchUserBookingsFromFirestore, fetchUserOrdersFromFirestore } from '@/lib/firestoreService';
+import {
+  fetchUserBookingsFromFirestore,
+  fetchUserOrdersFromFirestore,
+  subscribeToUserBookings,
+  subscribeToUserOrders
+} from '@/lib/firestoreService';
 import {
   User,
   X,
@@ -94,151 +99,54 @@ export default function ProfilePage() {
   const [patientMobility, setPatientMobility] = useState('Wheelchair Assisted (රෝද පුටුව)');
   const [patientConditions, setPatientConditions] = useState('');
 
-  // Bookings & Orders state
-  const [bookings, setBookings] = useState<BookingSubmission[]>([
-    {
-      id: 'demo_b1',
-      userId: 'usr_rohan_01',
-      bookingCode: 'PLC-2026-1024',
-      serviceId: 'day_care_12h',
-      serviceName: '12-Hour Day Shift Care (NVQ 4)',
-      staffTierId: 'nvq_4_caregiver',
-      staffTierName: 'NVQ Level 4 Certified Aide',
-      shiftType: '12h_day',
-      priceLKR: 4500,
-      patientName: 'Mrs. Jayasinghe (Mother)',
-      patientAge: 78,
-      patientGender: 'female',
-      mobilityLevel: 'partial_assistance',
-      medicalConditions: 'Hypertension, Mild Arthritis, Needs companionship',
-      district: 'Colombo (කොළඹ)',
-      city: 'Nugegoda',
-      address: 'No 24, Chapel Road, Nugegoda',
-      contactName: 'Mr. Rohan Jayasinghe',
-      contactPhone: '077 123 4567',
-      contactEmail: 'rohan.j@gmail.com',
-      startDate: '2026-10-14',
-      durationDays: 14,
-      totalCostLKR: 63000,
-      status: 'in_progress',
-      paymentStatus: 'fully_paid',
-      assignedCaregiverName: 'Sister K. Chamila (RN Certified Aide)',
-      assignedCaregiverPhone: '077 987 6543',
-      createdAt: '2026-10-12T08:30:00Z'
-    },
-    {
-      id: 'demo_b2',
-      userId: 'usr_rohan_01',
-      bookingCode: 'PLC-2026-2048',
-      serviceId: 'live_in_24h',
-      serviceName: '24-Hour Live-in Care (NVQ 5)',
-      staffTierId: 'nvq_5_nurse',
-      staffTierName: 'NVQ Level 5 Senior Nurse',
-      shiftType: '24h_full',
-      priceLKR: 7000,
-      patientName: 'Mr. Dharmadasa (Father-in-law)',
-      patientAge: 82,
-      patientGender: 'male',
-      mobilityLevel: 'bedridden',
-      medicalConditions: 'Post-Stroke Recovery, Catheter care, Bed sore prevention',
-      district: 'Gampaha (ගම්පහ)',
-      city: 'Kelaniya',
-      address: 'No 18/A, Station Road, Kelaniya',
-      contactName: 'Mr. Rohan Jayasinghe',
-      contactPhone: '077 123 4567',
-      contactEmail: 'rohan.j@gmail.com',
-      startDate: '2026-10-18',
-      durationDays: 30,
-      totalCostLKR: 210000,
-      status: 'caregiver_assigned',
-      paymentStatus: 'advance_paid',
-      assignedCaregiverName: 'Mr. Sunimal Perera (Senior NVQ 5 Nurse)',
-      assignedCaregiverPhone: '071 234 5678',
-      createdAt: '2026-10-15T14:15:00Z'
-    }
-  ]);
+  // Bookings & Orders state (Loaded Live from Firestore)
+  const [bookings, setBookings] = useState<BookingSubmission[]>([]);
+  const [orders, setOrders] = useState<EquipmentOrder[]>([]);
+  const [payments, setPayments] = useState<PaymentRecord[]>([]);
 
-  const [orders, setOrders] = useState<EquipmentOrder[]>([
-    {
-      id: 'demo_ord1',
-      orderCode: 'ORD-2026-1049',
-      userId: 'usr_rohan_01',
-      items: [
-        {
-          itemId: 'air_mattress_pump',
-          name: 'Medical Ripple Air Mattress with Anti-Bed Sore Pump',
-          quantity: 1,
-          priceLKR: 24500
-        },
-        {
-          itemId: 'wheelchair_foldable',
-          name: 'Standard Commode Wheelchair (Foldable)',
-          quantity: 1,
-          priceLKR: 38500
-        }
-      ],
-      totalAmountLKR: 63000,
-      paymentMethod: 'bank_transfer',
-      deliveryAddress: 'No 24, Chapel Road, Nugegoda',
-      district: 'Colombo (කොළඹ)',
-      contactName: 'Rohan Jayasinghe',
-      contactPhone: '077 123 4567',
-      status: 'dispatched',
-      createdAt: '2026-10-18'
-    }
-  ]);
-
-  const [payments, setPayments] = useState<PaymentRecord[]>([
-    {
-      id: 'pay_1',
-      invoiceNumber: 'INV-PLC-2026-089',
-      bookingCode: 'PLC-2026-1024',
-      serviceName: '12-Hour Day Shift Care (14 Days)',
-      amountLKR: 63000,
-      paymentDate: '2026-10-12',
-      paymentMethod: 'bank_transfer',
-      status: 'paid'
-    },
-    {
-      id: 'pay_2',
-      invoiceNumber: 'INV-PLC-2026-102',
-      bookingCode: 'PLC-2026-2048',
-      serviceName: '24-Hour Live-in Care Advance (30 Days)',
-      amountLKR: 105000,
-      paymentDate: '2026-10-15',
-      paymentMethod: 'online_card',
-      status: 'paid'
-    }
-  ]);
-
-  // Synchronize form fields when user changes
+  // Synchronize form fields & subscribe to real-time Firestore bookings when user changes
   useEffect(() => {
-    if (user) {
-      setName(user.name || '');
-      setPhone(user.phone || '');
-      setDistrict(user.district || 'Colombo (කොළඹ)');
-      setCity(user.city || 'Colombo');
-      setAddress(user.address || '');
-      setPhotoURL(user.photoURL || '');
-
-      // Load user bookings from Firestore
-      fetchUserBookingsFromFirestore(user.id)
-        .then((userBookings) => {
-          if (userBookings && userBookings.length > 0) {
-            setBookings(userBookings);
-          }
-        })
-        .catch((e) => console.warn('Bookings load fallback:', e));
-
-      // Load user orders from Firestore
-      fetchUserOrdersFromFirestore(user.id)
-        .then((userOrders) => {
-          if (userOrders && userOrders.length > 0) {
-            setOrders(userOrders);
-          }
-        })
-        .catch((e) => console.warn('Orders load fallback:', e));
+    if (!user) {
+      setBookings([]);
+      setOrders([]);
+      setPayments([]);
+      return;
     }
+
+    setName(user.name || '');
+    setPhone(user.phone || '');
+    setDistrict(user.district || 'Colombo (කොළඹ)');
+    setCity(user.city || 'Colombo');
+    setAddress(user.address || '');
+    setPhotoURL(user.photoURL || '');
+
+    // Real-time listener for user bookings from Firestore
+    const unsubBookings = subscribeToUserBookings(user.id, (cloudBookings) => {
+      setBookings(cloudBookings);
+
+      // Generate invoice records for payment history
+      const generatedPayments: PaymentRecord[] = cloudBookings.map((b) => ({
+        id: `pay_${b.bookingCode}`,
+        invoiceNumber: `INV-${b.bookingCode}`,
+        bookingCode: b.bookingCode,
+        serviceName: `${b.serviceName} (${b.staffTierName || 'Care'} - ${b.durationDays} Days)`,
+        amountLKR: b.totalCostLKR || b.priceLKR,
+        paymentDate: b.startDate || b.createdAt.split('T')[0],
+        paymentMethod: 'cash_on_duty',
+        status: b.paymentStatus === 'fully_paid' ? 'paid' : b.paymentStatus === 'advance_paid' ? 'paid' : 'due'
+      }));
+      setPayments(generatedPayments);
+    });
+
+    // Real-time listener for user orders from Firestore
+    const unsubOrders = subscribeToUserOrders(user.id, (cloudOrders) => {
+      setOrders(cloudOrders);
+    });
+
+    return () => {
+      unsubBookings();
+      unsubOrders();
+    };
   }, [user]);
 
   // Multilingual Strings
