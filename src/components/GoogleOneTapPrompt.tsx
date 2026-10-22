@@ -6,7 +6,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { X, ShieldCheck, Sparkles } from 'lucide-react';
 
 export const GoogleOneTapPrompt: React.FC = () => {
-  const { user, loginWithGoogle } = useAuth();
+  const { user, loginWithGoogle, openAuthModal } = useAuth();
   const { language } = useLanguage();
   const [isVisible, setIsVisible] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -42,8 +42,12 @@ export const GoogleOneTapPrompt: React.FC = () => {
     try {
       await loginWithGoogle();
       setIsVisible(false);
-    } catch (e) {
+    } catch (e: any) {
       console.warn('Google One Tap sign in failed:', e);
+      if (e?.code === 'auth/unauthorized-domain') {
+        setIsVisible(false);
+        openAuthModal();
+      }
     } finally {
       setLoading(false);
     }

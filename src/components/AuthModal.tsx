@@ -118,7 +118,12 @@ export const AuthModal: React.FC = () => {
     try {
       await loginWithGoogle();
     } catch (err: any) {
-      if (err.code === 'auth/popup-closed-by-user') {
+      if (err.code === 'auth/unauthorized-domain') {
+        const currentHost = typeof window !== 'undefined' ? window.location.hostname : 'your-domain.vercel.app';
+        setError(
+          `Domain Unauthorized: ඔබගේ වෙබ් අඩවියේ Domain එක (${currentHost}) Firebase Authentication හි Authorized Domains ලැයිස්තුවට එක් කර නොමැත. කරුණාකර Firebase Console -> Authentication -> Settings -> Authorized Domains වෙත ගොස් "${currentHost}" Add කරන්න. (නැතහොත් පහත Email & Password මඟින්ද Log In විය හැක).`
+        );
+      } else if (err.code === 'auth/popup-closed-by-user') {
         setError('Google login window was closed. Please try again.');
       } else {
         setError(err.message || 'Google sign-in error occurred.');
