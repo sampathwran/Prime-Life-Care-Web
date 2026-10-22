@@ -2,14 +2,15 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile } from '@/types';
-import { firebaseApp, auth, db, googleAuthProvider } from '@/lib/firebase';
+import { auth, db, googleAuthProvider } from '@/lib/firebase';
 import {
   onAuthStateChanged,
   signInWithPopup,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   updateProfile,
-  signOut
+  signOut,
+  User as FirebaseUser
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
@@ -95,6 +96,44 @@ export const defaultDemoUser: UserProfile = {
   ]
 };
 
+/**
+ * Resilient Firestore profile sync helper.
+ * If client is offline, Firestore database is not yet created, or network times out,
+ * it safely falls back to local data without throwing an error to the user.
+ */
+async function syncUserProfileSafely(
+  uid: string,
+  fallbackProfile: UserProfile
+): Promise<UserProfile> {
+  let finalProfile = { ...fallbackProfile };
+
+  try {
+    const userDocRef = doc(db, 'users', uid);
+    // Timeout of 2000ms so auth never hangs or crashes if Firestore is offline
+    const fetchDocPromise = getDoc(userDocRef);
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Firestore timeout')), 2000)
+    );
+
+    const userDocSnap: any = await Promise.race([fetchDocPromise, timeoutPromise]);
+    if (userDocSnap?.exists()) {
+      finalProfile = {
+        ...finalProfile,
+        ...(userDocSnap.data() as UserProfile)
+      };
+    } else {
+      // Create user doc in background
+      setDoc(userDocRef, finalProfile, { merge: true }).catch((err) => {
+        console.warn('Background Firestore profile save warning:', err);
+      });
+    }
+  } catch (err) {
+    console.warn('Firestore offline / unreachable (using local profile safely):', err);
+  }
+
+  return finalProfile;
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -103,7 +142,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Synchronize with Firebase Auth state
   useEffect(() => {
-    // First, load from localStorage if previously stored
+    // 1. Initial quick load from localStorage
     const saved = localStorage.getItem('prime_life_care_user');
     if (saved) {
       try {
@@ -113,48 +152,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
 
-    // Subscribe to Firebase Auth
-    const unsubscribe = onAuthStateChanged(auth, async (fUser) => {
+    // 2. Subscribe to Firebase Auth
+    const unsubscribe = onAuthStateChanged(auth, async (fUser: FirebaseUser | null) => {
       if (fUser) {
-        try {
-          // Fetch user document from Firestore
-          const userDocRef = doc(db, 'users', fUser.uid);
-          const userDoc = await getDoc(userDocRef);
+        const baseProfile: UserProfile = {
+          id: fUser.uid,
+          name: fUser.displayName || fUser.email?.split('@')[0] || 'Prime Member',
+          email: fUser.email || '',
+          phone: fUser.phoneNumber || '',
+          photoURL:
+            fUser.photoURL ||
+            `https://ui-avatars.com/api/?name=${encodeURIComponent(fUser.displayName || 'Member')}&background=0D8ABC&color=fff&rounded=true`,
+          district: 'Colombo (කොළඹ)',
+          city: 'Colombo',
+          address: '',
+          savedPatients: [],
+          notifications: [
+            {
+              id: `notif_${Date.now()}`,
+              title: 'සාදරයෙන් පිළිගනිමු! 🩺',
+              message:
+                'Prime Life Care පවුලට ඔබව සාදරයෙන් පිළිගනිමු. ඔබගේ රෝගී සාත්තු සේවා සහ උපකරණ අවශ්‍යතා පහසුවෙන් මෙතැනින් ඉටුකරගත හැක.',
+              type: 'system',
+              timestamp: 'මීට සුළු මොහොතකට පෙර',
+              isRead: false
+            }
+          ],
+          createdAt: new Date().toISOString()
+        };
 
-          let profile: UserProfile;
-          if (userDoc.exists()) {
-            profile = userDoc.data() as UserProfile;
-          } else {
-            profile = {
-              id: fUser.uid,
-              name: fUser.displayName || fUser.email?.split('@')[0] || 'Prime Member',
-              email: fUser.email || '',
-              phone: fUser.phoneNumber || '',
-              photoURL: fUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(fUser.displayName || 'Member')}&background=0D8ABC&color=fff&rounded=true`,
-              district: 'Colombo (කොළඹ)',
-              city: 'Colombo',
-              address: '',
-              savedPatients: [],
-              notifications: [
-                {
-                  id: `notif_${Date.now()}`,
-                  title: 'සාදරයෙන් පිළිගනිමු! 🩺',
-                  message: 'Prime Life Care පවුලට ඔබව සාදරයෙන් පිළිගනිමු. ඔබගේ රෝගී සාත්තු සේවා සහ උපකරණ අවශ්‍යතා පහසුවෙන් මෙතැනින් ඉටුකරගත හැක.',
-                  type: 'system',
-                  timestamp: 'මීට සුළු මොහොතකට පෙර',
-                  isRead: false
-                }
-              ],
-              createdAt: new Date().toISOString()
-            };
-            await setDoc(userDocRef, profile, { merge: true });
-          }
-
-          setUser(profile);
-          localStorage.setItem('prime_life_care_user', JSON.stringify(profile));
-        } catch (err) {
-          console.warn('Firestore fetch user warning:', err);
-        }
+        const resolvedProfile = await syncUserProfileSafely(fUser.uid, baseProfile);
+        setUser(resolvedProfile);
+        localStorage.setItem('prime_life_care_user', JSON.stringify(resolvedProfile));
       }
       setLoading(false);
     });
@@ -168,41 +197,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const result = await signInWithPopup(auth, googleAuthProvider);
       const gUser = result.user;
 
-      // Sync with Firestore
-      const userDocRef = doc(db, 'users', gUser.uid);
-      const userDoc = await getDoc(userDocRef);
+      const baseProfile: UserProfile = {
+        id: gUser.uid,
+        name: gUser.displayName || gUser.email?.split('@')[0] || 'Prime Member',
+        email: gUser.email || '',
+        phone: gUser.phoneNumber || '',
+        photoURL:
+          gUser.photoURL ||
+          `https://ui-avatars.com/api/?name=${encodeURIComponent(gUser.displayName || 'Member')}&background=0D8ABC&color=fff&rounded=true`,
+        district: 'Colombo (කොළඹ)',
+        city: 'Colombo',
+        address: '',
+        savedPatients: [],
+        notifications: [
+          {
+            id: `notif_${Date.now()}`,
+            title: 'සාදරයෙන් පිළිගනිමු! 🩺',
+            message:
+              'Prime Life Care පවුලට ඔබව සාදරයෙන් පිළිගනිමු. ඔබගේ රෝගී සාත්තු සේවා සහ උපකරණ අවශ්‍යතා පහසුවෙන් මෙතැනින් ඉටුකරගත හැක.',
+            type: 'system',
+            timestamp: 'මීට සුළු මොහොතකට පෙර',
+            isRead: false
+          }
+        ],
+        createdAt: new Date().toISOString()
+      };
 
-      let profile: UserProfile;
-      if (userDoc.exists()) {
-        profile = userDoc.data() as UserProfile;
-      } else {
-        profile = {
-          id: gUser.uid,
-          name: gUser.displayName || gUser.email?.split('@')[0] || 'Prime Member',
-          email: gUser.email || '',
-          phone: gUser.phoneNumber || '',
-          photoURL: gUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(gUser.displayName || 'Member')}&background=0D8ABC&color=fff&rounded=true`,
-          district: 'Colombo (කොළඹ)',
-          city: 'Colombo',
-          address: '',
-          savedPatients: [],
-          notifications: [
-            {
-              id: `notif_${Date.now()}`,
-              title: 'සාදරයෙන් පිළිගනිමු! 🩺',
-              message: 'Prime Life Care පවුලට ඔබව සාදරයෙන් පිළිගනිමු. ඔබගේ රෝගී සාත්තු සේවා සහ උපකරණ අවශ්‍යතා පහසුවෙන් මෙතැනින් ඉටුකරගත හැක.',
-              type: 'system',
-              timestamp: 'මීට සුළු මොහොතකට පෙර',
-              isRead: false
-            }
-          ],
-          createdAt: new Date().toISOString()
-        };
-        await setDoc(userDocRef, profile, { merge: true });
-      }
+      const resolvedProfile = await syncUserProfileSafely(gUser.uid, baseProfile);
 
-      setUser(profile);
-      localStorage.setItem('prime_life_care_user', JSON.stringify(profile));
+      setUser(resolvedProfile);
+      localStorage.setItem('prime_life_care_user', JSON.stringify(resolvedProfile));
       setIsAuthModalOpen(false);
 
       if (postAuthCallback) {
@@ -217,7 +241,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Email & Password Registration
-  const registerWithEmail = async (name: string, email: string, password: string, phone: string): Promise<boolean> => {
+  const registerWithEmail = async (
+    name: string,
+    email: string,
+    password: string,
+    phone: string
+  ): Promise<boolean> => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
       const fUser = userCredential.user;
@@ -230,7 +259,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.warn('Profile update warning:', e);
       }
 
-      const profile: UserProfile = {
+      const baseProfile: UserProfile = {
         id: fUser.uid,
         name: name.trim(),
         email: email.trim(),
@@ -244,7 +273,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           {
             id: `notif_${Date.now()}`,
             title: 'ගිණුම සාර්ථකව සාදන ලදී! 🎉',
-            message: 'Prime Life Care පවුලට ඔබව සාදරයෙන් පිළිගනිමු. ඔබගේ රෝගී සාත්තු සේවා සහ උපකරණ අවශ්‍යතා පහසුවෙන් මෙතැනින් ඉටුකරගත හැක.',
+            message:
+              'Prime Life Care පවුලට ඔබව සාදරයෙන් පිළිගනිමු. ඔබගේ රෝගී සාත්තු සේවා සහ උපකරණ අවශ්‍යතා පහසුවෙන් මෙතැනින් ඉටුකරගත හැක.',
             type: 'system',
             timestamp: 'මීට සුළු මොහොතකට පෙර',
             isRead: false
@@ -253,14 +283,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         createdAt: new Date().toISOString()
       };
 
-      try {
-        await setDoc(doc(db, 'users', fUser.uid), profile, { merge: true });
-      } catch (err) {
-        console.warn('Firestore user save warning:', err);
-      }
+      const resolvedProfile = await syncUserProfileSafely(fUser.uid, baseProfile);
 
-      setUser(profile);
-      localStorage.setItem('prime_life_care_user', JSON.stringify(profile));
+      setUser(resolvedProfile);
+      localStorage.setItem('prime_life_care_user', JSON.stringify(resolvedProfile));
       setIsAuthModalOpen(false);
 
       if (postAuthCallback) {
@@ -281,34 +307,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
         const fUser = userCredential.user;
 
-        const userDocRef = doc(db, 'users', fUser.uid);
-        const userDoc = await getDoc(userDocRef);
+        const baseProfile: UserProfile = {
+          id: fUser.uid,
+          name: fUser.displayName || email.split('@')[0],
+          email: email.trim(),
+          phone: '077 123 4567',
+          photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(fUser.displayName || email)}&background=2563eb&color=fff&rounded=true&bold=true`,
+          district: 'Colombo (කොළඹ)',
+          city: 'Colombo',
+          address: '',
+          savedPatients: [],
+          notifications: [],
+          createdAt: new Date().toISOString()
+        };
 
-        let profile: UserProfile;
-        if (userDoc.exists()) {
-          profile = userDoc.data() as UserProfile;
-        } else {
-          profile = {
-            id: fUser.uid,
-            name: fUser.displayName || email.split('@')[0],
-            email: email.trim(),
-            phone: '077 123 4567',
-            photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(fUser.displayName || email)}&background=2563eb&color=fff&rounded=true&bold=true`,
-            district: 'Colombo (කොළඹ)',
-            city: 'Colombo',
-            address: '',
-            savedPatients: [],
-            notifications: [],
-            createdAt: new Date().toISOString()
-          };
-          await setDoc(userDocRef, profile, { merge: true });
-        }
-
-        setUser(profile);
-        localStorage.setItem('prime_life_care_user', JSON.stringify(profile));
+        const resolvedProfile = await syncUserProfileSafely(fUser.uid, baseProfile);
+        setUser(resolvedProfile);
+        localStorage.setItem('prime_life_care_user', JSON.stringify(resolvedProfile));
       } else {
         // Fallback for simple email without password
-        const formattedName = email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+        const formattedName = email
+          .split('@')[0]
+          .replace(/[._]/g, ' ')
+          .replace(/\b\w/g, (c) => c.toUpperCase());
         const profile: UserProfile = {
           id: `usr_${Date.now()}`,
           name: formattedName,
@@ -343,7 +364,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return loginWithEmail(email, password);
   };
 
-  const register = async (name: string, email: string, phone: string, password?: string): Promise<boolean> => {
+  const register = async (
+    name: string,
+    email: string,
+    phone: string,
+    password?: string
+  ): Promise<boolean> => {
     if (password) {
       return registerWithEmail(name, email, password, phone);
     }
@@ -389,7 +415,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       const userDocRef = doc(db, 'users', updatedUser.id);
-      await setDoc(userDocRef, updatedUser, { merge: true });
+      setDoc(userDocRef, updatedUser, { merge: true }).catch((err) => {
+        console.warn('Firestore user update warning (offline):', err);
+      });
     } catch (err) {
       console.warn('Firestore user update warning:', err);
     }
