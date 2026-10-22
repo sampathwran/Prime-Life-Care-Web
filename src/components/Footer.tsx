@@ -5,9 +5,9 @@ import { useLanguage } from '@/context/LanguageContext';
 import { Heart, Phone, Mail, MapPin, AlertTriangle } from 'lucide-react';
 
 interface FooterProps {
-  onNavigateToServices: () => void;
-  onNavigateToTrust: () => void;
-  onNavigateToTracker: () => void;
+  onNavigateToServices?: () => void;
+  onNavigateToTrust?: () => void;
+  onNavigateToTracker?: () => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({

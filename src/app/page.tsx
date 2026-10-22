@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/Navbar';
 import { Hero } from '@/components/Hero';
 import { TrustSection } from '@/components/TrustSection';
@@ -9,7 +10,6 @@ import { ServicesSection } from '@/components/ServicesSection';
 import { ReviewsSection } from '@/components/ReviewsSection';
 import { BookingModal } from '@/components/BookingModal';
 import { BookingTracker } from '@/components/BookingTracker';
-import { ProfileModal } from '@/components/ProfileModal';
 import { AuthModal } from '@/components/AuthModal';
 import { GoogleOneTapPrompt } from '@/components/GoogleOneTapPrompt';
 import { Footer } from '@/components/Footer';
@@ -23,6 +23,7 @@ import { Phone, MessageCircle, ShoppingBag, ArrowRight, Truck } from 'lucide-rea
 export default function Home() {
   const { user, openAuthModal } = useAuth();
   const { t } = useLanguage();
+  const router = useRouter();
 
   // Dynamic Services state
   const [services] = useState<ServiceItem[]>(initialServices);
@@ -177,7 +178,6 @@ export default function Home() {
 
   // Modals state
   const [isBookingOpen, setIsBookingOpen] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [selectedServiceForBooking, setSelectedServiceForBooking] = useState<ServiceItem | null>(null);
   const [selectedTierForBooking, setSelectedTierForBooking] = useState<StaffTierId>('nvq_4_caregiver');
 
@@ -228,7 +228,7 @@ export default function Home() {
         onNavigateToStore={() => { window.location.href = '/store'; }}
         onNavigateToTrust={() => scrollToSection('trust')}
         onNavigateToTracker={() => scrollToSection('tracker')}
-        onOpenProfile={() => setIsProfileOpen(true)}
+        onOpenProfile={() => router.push('/profile')}
         onOpenAuth={() => openAuthModal()}
       />
 
@@ -339,17 +339,7 @@ export default function Home() {
         selectedTierId={selectedTierForBooking}
         allServices={services}
         onBookingSubmitted={handleBookingSubmitted}
-        onOpenProfile={() => setIsProfileOpen(true)}
-      />
-
-      {/* Customer Profile & Booking/Payment/Equipment Orders Dashboard */}
-      <ProfileModal
-        isOpen={isProfileOpen}
-        onClose={() => setIsProfileOpen(false)}
-        bookings={bookings}
-        payments={payments}
-        orders={orders}
-        onOpenNewBooking={() => handleOpenBooking()}
+        onOpenProfile={() => router.push('/profile')}
       />
 
       {/* Email Login & Registration Modal */}

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
 import { Heart, Phone, Menu, X, Shield, Clock, LogIn, ShoppingBag, Globe, ChevronDown, Check } from 'lucide-react';
@@ -12,7 +13,7 @@ interface NavbarProps {
   onNavigateToStore: () => void;
   onNavigateToTrust?: () => void;
   onNavigateToTracker: () => void;
-  onOpenProfile: () => void;
+  onOpenProfile?: () => void;
   onOpenAuth: () => void;
 }
 
@@ -181,8 +182,8 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {/* Auth / Profile Button (At the very end / kelawaratama with Google Profile Icon) */}
             {user ? (
-              <button
-                onClick={onOpenProfile}
+              <Link
+                href="/profile"
                 className="relative px-3 py-1.5 rounded-xl border border-slate-200 hover:border-blue-300 bg-slate-50 hover:bg-blue-50/50 text-slate-900 text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-2xs group"
                 title={user.name}
               >
@@ -204,7 +205,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   )}
                 </div>
                 <span className="max-w-[110px] truncate">{user.name.split(' ')[0] || t.nav.myProfile}</span>
-              </button>
+              </Link>
             ) : (
               <button
                 onClick={onOpenAuth}
@@ -226,8 +227,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
 
             {user ? (
-              <button
-                onClick={onOpenProfile}
+              <Link
+                href="/profile"
                 className="relative w-8 h-8 rounded-full border border-slate-300 flex items-center justify-center bg-blue-600 text-white text-xs font-bold shadow-xs"
                 title={user.name}
               >
@@ -246,7 +247,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 {user.notifications && user.notifications.some((n) => !n.isRead) && (
                   <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-white animate-pulse" />
                 )}
-              </button>
+              </Link>
             ) : (
               <button
                 onClick={onOpenAuth}
@@ -307,15 +308,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <p className="text-[11px] text-slate-500">{user.email}</p>
                 </div>
               </div>
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenProfile();
-                }}
-                className="px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-xs"
+              <Link
+                href="/profile"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-xs cursor-pointer"
               >
                 {t.nav.myProfile}
-              </button>
+              </Link>
             </div>
           )}
 

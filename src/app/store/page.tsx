@@ -2,11 +2,11 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { ProfileModal } from '@/components/ProfileModal';
 import { AuthModal } from '@/components/AuthModal';
 import { BookingModal } from '@/components/BookingModal';
 import { GoogleOneTapPrompt } from '@/components/GoogleOneTapPrompt';
@@ -36,6 +36,7 @@ import {
 export default function StorePage() {
   const { language } = useLanguage();
   const { user, openAuthModal } = useAuth();
+  const router = useRouter();
 
   // Categories & Search Filter
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -905,16 +906,6 @@ export default function StorePage() {
         </div>
       )}
 
-      {/* Customer Profile Modal */}
-      <ProfileModal
-        isOpen={isProfileOpen}
-        onClose={() => setIsProfileOpen(false)}
-        bookings={bookings}
-        payments={payments}
-        orders={orders}
-        onOpenNewBooking={() => setIsBookingOpen(true)}
-      />
-
       {/* Booking Form Modal */}
       <BookingModal
         isOpen={isBookingOpen}
@@ -922,7 +913,7 @@ export default function StorePage() {
         selectedService={initialServices[0]}
         allServices={initialServices}
         onBookingSubmitted={() => {}}
-        onOpenProfile={() => setIsProfileOpen(true)}
+        onOpenProfile={() => router.push('/profile')}
       />
 
       {/* Auth Modal */}

@@ -7,24 +7,25 @@ import { ServiceItem, BookingSubmission, StaffTierId } from '@/types';
 import { districtList } from '@/data/services';
 import { staffTiers } from '@/data/staffTiers';
 import { saveBookingToFirestore } from '@/lib/firestoreService';
+import { initialServices } from '@/data/services';
 import { X, CheckCircle, ArrowRight, ArrowLeft, MessageSquare, Heart, Lock, User, LogIn, Award, Stethoscope, Loader2 } from 'lucide-react';
 
 interface BookingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  selectedService: ServiceItem | null;
+  selectedService?: ServiceItem | null;
   selectedTierId?: StaffTierId;
-  allServices: ServiceItem[];
-  onBookingSubmitted: (booking: BookingSubmission) => void;
-  onOpenProfile: () => void;
+  allServices?: ServiceItem[];
+  onBookingSubmitted?: (booking: BookingSubmission) => void;
+  onOpenProfile?: () => void;
 }
 
 export const BookingModal: React.FC<BookingModalProps> = ({
   isOpen,
   onClose,
-  selectedService,
+  selectedService = null,
   selectedTierId: initialTierId,
-  allServices,
+  allServices = initialServices,
   onBookingSubmitted,
   onOpenProfile
 }) => {
@@ -142,7 +143,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         .finally(() => {
           setIsSubmitting(false);
           setConfirmedBooking(newBooking);
-          onBookingSubmitted(newBooking);
+          onBookingSubmitted?.(newBooking);
           setCurrentStep(5);
         });
     }
@@ -584,7 +585,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 <button
                   onClick={() => {
                     resetAndClose();
-                    onOpenProfile();
+                    onOpenProfile?.();
                   }}
                   className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md transition-colors cursor-pointer"
                 >
