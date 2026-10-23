@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { AuthProvider } from "@/context/AuthContext";
+import { VisitorTracker } from "@/components/VisitorTracker";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -37,6 +38,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col font-sans bg-white text-slate-900">
         <LanguageProvider>
           <AuthProvider>
+            <VisitorTracker />
             {children}
           </AuthProvider>
         </LanguageProvider>

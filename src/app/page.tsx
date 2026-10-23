@@ -21,7 +21,9 @@ import {
   fetchUserBookingsFromFirestore,
   fetchUserOrdersFromFirestore,
   subscribeToUserBookings,
-  subscribeToUserOrders
+  subscribeToUserOrders,
+  trackSiteVisit,
+  subscribeToLiveServices
 } from '@/lib/firestoreService';
 import { Phone, MessageCircle, ShoppingBag, ArrowRight, Truck } from 'lucide-react';
 
@@ -30,8 +32,18 @@ export default function Home() {
   const { t } = useLanguage();
   const router = useRouter();
 
-  // Dynamic Services state
-  const [services] = useState<ServiceItem[]>(initialServices);
+  // Dynamic Services state (Synced Live from Firestore with fallback to initialServices)
+  const [services, setServices] = useState<ServiceItem[]>(initialServices);
+
+  // Subscribe to Real-Time Care Services & Packages published by Admin
+  useEffect(() => {
+    const unsub = subscribeToLiveServices((live) => {
+      if (live && live.length > 0) {
+        setServices(live);
+      }
+    });
+    return () => unsub();
+  }, []);
   
   // Bookings state (Loaded Live from Firestore)
   const [bookings, setBookings] = useState<BookingSubmission[]>([]);
@@ -41,6 +53,11 @@ export default function Home() {
 
   // Payment History State
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
+
+  // Track website visit in Firestore analytics
+  useEffect(() => {
+    trackSiteVisit();
+  }, []);
 
   // Sync with Firestore Cloud when logged in (Real-time)
   useEffect(() => {

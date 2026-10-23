@@ -241,7 +241,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   1. Select Care Package
                 </label>
                 <div className="grid gap-2.5">
-                  {allServices.slice(0, 4).map((svc) => (
+                  {allServices.map((svc) => (
                     <div
                       key={svc.id}
                       onClick={() => setActiveServiceId(svc.id)}

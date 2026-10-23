@@ -109,18 +109,24 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
     }));
   };
 
-  const getTierShortLabel = (tierId: StaffTierId) => {
+  const getTierShortLabel = (tierId: string, tierObj?: ServiceTierOption) => {
+    if (tierObj?.tierName && typeof tierObj.tierName === "object") {
+      const localized = tierObj.tierName[language] || tierObj.tierName["en"];
+      if (localized) return localized;
+    }
     switch (tierId) {
-      case 'basic_aide':
-        return { en: 'Basic Aide', si: 'මූලික සහායක', ta: 'அடிப்படை' }[language];
-      case 'nurse_assistant':
-        return { en: 'Nurse Assistant', si: 'හෙද සහායක', ta: 'செவிலியர் உதவி' }[language];
-      case 'nvq_4_caregiver':
-        return { en: 'NVQ 4 ⭐', si: 'NVQ 4 ⭐', ta: 'NVQ 4 ⭐' }[language];
-      case 'nvq_5_nurse':
-        return { en: 'NVQ 5 Nurse', si: 'NVQ 5 හෙද', ta: 'NVQ 5 செவிலியர்' }[language];
-      case 'doctor':
-        return { en: 'MBBS Doctor', si: 'MBBS වෛද්‍ය', ta: 'மருத்துவர்' }[language];
+      case "basic_aide":
+        return { en: "Basic Aide", si: "මූලික සහායක", ta: "அடிப்படை" }[language];
+      case "nurse_assistant":
+        return { en: "Nurse Assistant", si: "හෙද සහායක", ta: "செவிலியர் உதவி" }[language];
+      case "nvq_4_caregiver":
+        return { en: "NVQ 4 ⭐", si: "NVQ 4 ⭐", ta: "NVQ 4 ⭐" }[language];
+      case "nvq_5_nurse":
+        return { en: "NVQ 5 Nurse", si: "NVQ 5 හෙද", ta: "NVQ 5 செவிலியர்" }[language];
+      case "doctor":
+        return { en: "MBBS Doctor", si: "MBBS වෛද්‍ය", ta: "மருத்துவர்" }[language];
+      default:
+        return tierId.replace(/_/g, " ");
     }
   };
 
@@ -236,15 +242,18 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
             );
 
             const activePrice = activeTierOption ? activeTierOption.priceLKR : service.priceLKR;
-            const activeUnit = activeTierOption
-              ? activeTierOption.pricingUnit[language]
-              : service.pricingUnit[language];
             
-            const activeDuties = activeTierOption
-              ? activeTierOption.responsibilities[language]
-              : service.features[language];
+            const activeDuties = (activeTierOption
+              ? (activeTierOption.responsibilities?.[language] || activeTierOption.responsibilities?.["en"] || (activeTierOption as any).duties)
+              : (service.features?.[language] || service.features?.["en"])) || [];
 
-            const activeBadge = activeTierOption ? activeTierOption.badge[language] : null;
+            const activeUnit = activeTierOption
+              ? (activeTierOption.pricingUnit?.[language] || activeTierOption.pricingUnit?.["en"] || (typeof activeTierOption.pricingUnit === "string" ? activeTierOption.pricingUnit : "/ day"))
+              : (service.pricingUnit?.[language] || service.pricingUnit?.["en"] || (typeof service.pricingUnit === "string" ? service.pricingUnit : "/ day"));
+
+            const activeBadge = activeTierOption
+              ? (activeTierOption.badge?.[language] || activeTierOption.badge?.["en"] || (typeof activeTierOption.badge === "string" ? activeTierOption.badge : ""))
+              : null;
 
             return (
               <div
@@ -321,7 +330,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
                               }`}
                             >
                               <div className="flex items-center justify-between gap-1 w-full">
-                                <span className="truncate">{getTierShortLabel(tier.tierId)}</span>
+                                <span className="truncate">{getTierShortLabel(tier.tierId, tier)}</span>
                                 {tier.isRecommended && (
                                   <span className="text-[9px]">
                                     ⭐
@@ -358,7 +367,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
                   onClick={() => onSelectServiceToBook(service, currentTierId)}
                   className="w-full py-3 rounded-xl bg-slate-900 hover:bg-blue-600 text-white font-bold text-xs sm:text-sm transition-colors flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
                 >
-                  <span>{t.services.bookThis} ({getTierShortLabel(currentTierId)})</span>
+                  <span>{t.services.bookThis} ({getTierShortLabel(currentTierId, activeTierOption)})</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>

@@ -10,7 +10,7 @@ import {
   onSnapshot
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { BookingSubmission, EquipmentOrder } from '@/types';
+import { BookingSubmission, EquipmentOrder, ServiceItem, ServiceTierOption } from '@/types';
 
 // ======================== BOOKINGS ========================
 
@@ -205,3 +205,170 @@ export function subscribeToUserOrders(
     }
   );
 }
+
+// ======================== WEBSITE VISITOR TRACKING ========================
+
+/**
+ * Track unique website visitor sessions in Firestore (Real-time live traffic)
+ */
+export async function trackSiteVisit(): Promise<void> {
+  if (typeof window === 'undefined') return;
+  try {
+    const isTracked = sessionStorage.getItem('plc_session_tracked');
+    if (!isTracked) {
+      sessionStorage.setItem('plc_session_tracked', 'true');
+      const statsRef = doc(db, 'site_stats', 'traffic');
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      const snap = await getDoc(statsRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        const lastDate = data.lastDate || todayStr;
+        const isNewDay = lastDate !== todayStr;
+
+        // Reset if it had legacy dummy counts (>= 14820)
+        let currentTotal = typeof data.totalVisitors === 'number' ? data.totalVisitors : 0;
+        if (currentTotal >= 14820) currentTotal = 0;
+
+        let currentToday = typeof data.todayVisitors === 'number' ? data.todayVisitors : 0;
+        if (isNewDay || currentToday >= 340) currentToday = 0;
+
+        await setDoc(statsRef, {
+          totalVisitors: currentTotal + 1,
+          todayVisitors: currentToday + 1,
+          lastDate: todayStr,
+          lastVisitAt: new Date().toISOString()
+        }, { merge: true });
+      } else {
+        await setDoc(statsRef, {
+          totalVisitors: 1,
+          todayVisitors: 1,
+          lastDate: todayStr,
+          lastVisitAt: new Date().toISOString()
+        }, { merge: true });
+      }
+    }
+  } catch (e) {
+    console.warn('[Analytics] Visitor tracking warning:', e);
+  }
+}
+
+// ======================== CARE SERVICES & PACKAGES ========================
+
+/**
+ * Real-time listener for published care packages & services from Firestore
+ */
+export function subscribeToLiveServices(
+  onUpdate: (services: ServiceItem[]) => void
+): () => void {
+  const q = query(collection(db, 'services'));
+  return onSnapshot(
+    q,
+    (snap) => {
+      if (snap.empty) {
+        onUpdate([]);
+        return;
+      }
+      const list: ServiceItem[] = snap.docs.map((docSnap) => {
+        const d = docSnap.data();
+        const basePrice = typeof d.priceLKR === 'number'
+          ? d.priceLKR
+          : (typeof d.defaultPriceLKR === 'number' ? d.defaultPriceLKR : 4500);
+
+        const pricingUnitObj = typeof d.pricingUnit === 'object' && d.pricingUnit !== null
+          ? d.pricingUnit
+          : { en: d.pricingUnit || '/ day', si: d.pricingUnit || '/ දිනකට', ta: '' };
+
+        const parsedTiers: ServiceTierOption[] = Array.isArray(d.tiers) ? d.tiers.map((t: any) => {
+          const tPrice = typeof t.priceLKR === 'number' ? t.priceLKR : basePrice;
+          const tUnit = typeof t.pricingUnit === 'object' && t.pricingUnit !== null
+            ? t.pricingUnit
+            : { en: t.pricingUnit || pricingUnitObj.en || '/ day', si: t.pricingUnit || pricingUnitObj.si || '/ දිනකට', ta: '' };
+
+          let respEn: string[] = [];
+          let respSi: string[] = [];
+          let respTa: string[] = [];
+
+          if (t.responsibilities && typeof t.responsibilities === 'object') {
+            if (Array.isArray(t.responsibilities.en)) respEn = t.responsibilities.en;
+            if (Array.isArray(t.responsibilities.si)) respSi = t.responsibilities.si;
+            if (Array.isArray(t.responsibilities.ta)) respTa = t.responsibilities.ta;
+          }
+          if (respEn.length === 0 && Array.isArray(t.duties)) {
+            respEn = t.duties;
+          }
+          if (respSi.length === 0 && Array.isArray(t.dutiesSi)) {
+            respSi = t.dutiesSi;
+          } else if (respSi.length === 0 && respEn.length > 0) {
+            respSi = respEn;
+          }
+
+          const tNameEn = t.tierName?.en || t.tierNameEn || (typeof t.tierName === 'string' ? t.tierName : 'Caregiver Tier');
+          const tNameSi = t.tierName?.si || t.tierNameSi || tNameEn;
+          const tBadgeEn = t.badge?.en || t.badgeEn || (typeof t.badge === 'string' ? t.badge : '');
+          const tBadgeSi = t.badge?.si || t.badgeSi || tBadgeEn;
+
+          return {
+            tierId: t.tierId || 'tier_' + Math.random().toString(36).substring(2, 7),
+            tierName: { en: tNameEn, si: tNameSi, ta: '' },
+            badge: { en: tBadgeEn, si: tBadgeSi, ta: '' },
+            priceLKR: tPrice,
+            pricingUnit: tUnit,
+            responsibilities: {
+              en: respEn,
+              si: respSi,
+              ta: respTa
+            },
+            isRecommended: !!t.isRecommended
+          };
+        }) : [];
+
+        // Fallback features from first tier if not provided
+        let featuresObj = typeof d.features === 'object' && d.features !== null ? d.features : null;
+        if (!featuresObj || (!featuresObj.en?.length && !featuresObj.si?.length)) {
+          const firstTier = parsedTiers[0];
+          featuresObj = {
+            en: firstTier ? firstTier.responsibilities.en : [],
+            si: firstTier ? firstTier.responsibilities.si : [],
+            ta: firstTier ? firstTier.responsibilities.ta : []
+          };
+        }
+
+        const defaultTierId = d.defaultTierId || (parsedTiers.find(t => t.isRecommended)?.tierId) || parsedTiers[0]?.tierId || 'nvq_4_caregiver';
+
+        const nameEn = d.name?.en || d.nameEn || (typeof d.name === 'string' ? d.name : 'Care Package');
+        const nameSi = d.name?.si || d.nameSi || nameEn;
+        const shortDescEn = d.shortDescription?.en || d.shortDescriptionEn || (typeof d.shortDescription === 'string' ? d.shortDescription : '');
+        const shortDescSi = d.shortDescription?.si || d.shortDescriptionSi || shortDescEn;
+
+        return {
+          id: d.id || docSnap.id,
+          category: d.category || 'elderly_care',
+          name: { en: nameEn, si: nameSi, ta: '' },
+          shortDescription: { en: shortDescEn, si: shortDescSi, ta: '' },
+          description: { en: shortDescEn, si: shortDescSi, ta: '' },
+          shiftType: d.shiftType || (d.hours === 24 ? '24h_full' : d.hours === 2 ? 'short_visit' : '12h_day'),
+          hours: typeof d.hours === 'number' ? d.hours : 12,
+          priceLKR: basePrice,
+          pricingUnit: pricingUnitObj,
+          icon: d.icon || 'HeartPulse',
+          features: featuresObj,
+          defaultTierId,
+          tiers: parsedTiers,
+          isActive: d.isActive !== false,
+          sortOrder: typeof d.sortOrder === 'number' ? d.sortOrder : 0
+        };
+      });
+
+      // Filter to only active/published services and sort by sortOrder
+      const activeList = list.filter(s => s.isActive !== false);
+      activeList.sort((a: any, b: any) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+      onUpdate(activeList);
+    },
+    (err) => {
+      console.warn('[Firestore] Error subscribing to live services:', err);
+    }
+  );
+}
+
+

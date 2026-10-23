@@ -1,6 +1,6 @@
 export type Language = 'si' | 'en' | 'ta';
 
-export type ServiceCategory = 'all' | 'elderly_care' | 'child_care' | 'recovery' | 'specialized' | 'short_visit';
+export type ServiceCategory = 'all' | 'elderly_care' | 'child_care' | 'recovery' | 'specialized' | 'short_visit' | string;
 
 export type ShiftType = '12h_day' | '12h_night' | '24h_full' | 'short_visit';
 
@@ -41,9 +41,10 @@ export interface ServiceItem {
   defaultTierId?: StaffTierId;
   tiers?: ServiceTierOption[];
   isActive: boolean;
+  sortOrder?: number;
 }
 
-export type StaffTierId = 'doctor' | 'nvq_5_nurse' | 'nvq_4_caregiver' | 'nurse_assistant' | 'basic_aide';
+export type StaffTierId = 'doctor' | 'nvq_5_nurse' | 'nvq_4_caregiver' | 'nurse_assistant' | 'basic_aide' | string;
 
 export interface StaffTier {
   id: StaffTierId;
