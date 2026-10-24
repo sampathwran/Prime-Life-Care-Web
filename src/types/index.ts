@@ -212,6 +212,9 @@ export interface BookingSubmission {
   caregiverChangeRequest?: {
     requested: boolean;
     reason: string;
+    category?: string;
+    categoryLabel?: string;
+    caregiverNameAtRequest?: string;
     requestedAt: string;
     status: 'pending' | 'reviewed' | 'resolved';
     resolvedAt?: string;

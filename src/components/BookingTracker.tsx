@@ -420,6 +420,26 @@ export const BookingTracker: React.FC<BookingTrackerProps> = ({ bookings }) => {
                         <span className="font-bold text-slate-900">{result.vitalsPlan.medicationReminders ? 'Logged with Water' : 'Self'}</span>
                       </div>
                     </div>
+
+                    {/* Bedside Routine Tasks Checklist Badges */}
+                    {result.carePlanTasks && result.carePlanTasks.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-blue-100">
+                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1.5">
+                          Active Bedside Care Routine Tasks ({result.carePlanTasks.length} Prescribed):
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {result.carePlanTasks.map((task, idx) => (
+                            <span
+                              key={idx}
+                              className="px-2.5 py-1 rounded-lg bg-white border border-blue-200 text-blue-950 text-xs font-semibold flex items-center gap-1.5 shadow-2xs"
+                            >
+                              <CheckCircle className="w-3 h-3 text-emerald-600 shrink-0" />
+                              <span>{task}</span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
