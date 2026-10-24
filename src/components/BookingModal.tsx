@@ -8,7 +8,8 @@ import { districtList } from '@/data/services';
 import { staffTiers } from '@/data/staffTiers';
 import { saveBookingToFirestore } from '@/lib/firestoreService';
 import { initialServices } from '@/data/services';
-import { X, CheckCircle, ArrowRight, ArrowLeft, MessageSquare, Heart, Lock, User, LogIn, Award, Stethoscope, Loader2, MapPin, Navigation, ExternalLink } from 'lucide-react';
+import { getDefaultCarePlanForService, allStandardCareTasks } from '@/data/packageCarePlans';
+import { X, CheckCircle, ArrowRight, ArrowLeft, MessageSquare, Heart, Lock, User, LogIn, Award, Stethoscope, Loader2, MapPin, Navigation, ExternalLink, Plus, Trash2, Sparkles, Activity } from 'lucide-react';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -43,13 +44,47 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   const [mobilityLevel, setMobilityLevel] = useState<'independent' | 'partial_assistance' | 'bedridden' | 'wheelchair'>('partial_assistance');
   const [medicalConditions, setMedicalConditions] = useState('');
   
-  // Care Plan & Vitals Schedule Preferences
-  const [bpFrequency, setBpFrequency] = useState<'none' | '1x_daily' | '2x_daily' | '4x_daily'>('2x_daily');
-  const [sugarFrequency, setSugarFrequency] = useState<'none' | 'fasting' | 'fasting_and_pp' | 'random'>('fasting');
+  // Care Plan & Vitals Schedule Preferences (Optional / Package-Adaptive)
+  const [isCustomCarePlanEnabled, setIsCustomCarePlanEnabled] = useState(false);
+  const [bpFrequency, setBpFrequency] = useState<string>('2x_daily');
+  const [sugarFrequency, setSugarFrequency] = useState<string>('fasting');
   const [bedTurningRequired, setBedTurningRequired] = useState(false);
   const [medicationReminders, setMedicationReminders] = useState(true);
   const [catheterCare, setCatheterCare] = useState(false);
   const [woundDressing, setWoundDressing] = useState(false);
+  const [activeCareTasks, setActiveCareTasks] = useState<string[]>([]);
+  const [customBedsideTaskInput, setCustomBedsideTaskInput] = useState('');
+
+  // Sync package-specific default care plan whenever activeService changes
+  useEffect(() => {
+    if (activeServiceId) {
+      const selected = allServices.find((s) => s.id === activeServiceId);
+      const plan = getDefaultCarePlanForService(activeServiceId, selected?.category);
+      setBpFrequency(plan.bpFrequency);
+      setSugarFrequency(plan.sugarFrequency);
+      setBedTurningRequired(plan.bedTurningRequired);
+      setMedicationReminders(plan.medicationReminders);
+      setCatheterCare(plan.catheterCare || false);
+      setWoundDressing(plan.woundDressing || false);
+      setActiveCareTasks(plan.carePlanTasks);
+    }
+  }, [activeServiceId, allServices]);
+
+  const handleToggleTask = (task: string) => {
+    setActiveCareTasks((prev) =>
+      prev.includes(task) ? prev.filter((t) => t !== task) : [...prev, task]
+    );
+  };
+
+  const handleAddCustomTask = () => {
+    if (customBedsideTaskInput.trim()) {
+      const task = customBedsideTaskInput.trim();
+      if (!activeCareTasks.includes(task)) {
+        setActiveCareTasks((prev) => [...prev, task]);
+      }
+      setCustomBedsideTaskInput('');
+    }
+  };
   
   const [district, setDistrict] = useState(districtList[0]);
   const [city, setCity] = useState('');
@@ -175,26 +210,26 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         status: 'pending_review',
         paymentStatus: 'unpaid',
         createdAt: new Date().toISOString(),
-        vitalsPlan: {
-          bpFrequency,
-          sugarFrequency,
-          spo2Monitoring: true,
-          bedTurningRequired: bedTurningRequired || mobilityLevel === 'bedridden',
-          bedTurningFrequencyHours: (bedTurningRequired || mobilityLevel === 'bedridden') ? 2 : 0,
-          medicationReminders,
-          catheterCare,
-          woundDressing,
-        },
-        carePlanTasks: [
-          medicationReminders ? 'Prescription Medication Administration' : null,
-          bpFrequency !== 'none' ? `Blood Pressure Check (${bpFrequency})` : null,
-          sugarFrequency !== 'none' ? `Blood Sugar Test (${sugarFrequency})` : null,
-          (bedTurningRequired || mobilityLevel === 'bedridden') ? '2-Hour Bedsore Repositioning Protocol' : null,
-          catheterCare ? 'Catheter / Ryles Tube Hygiene' : null,
-          woundDressing ? 'Aseptic Wound Dressing Care' : null,
-          'Daily Hydration & Nutrition Tracking',
-          'Bedside Comfort & Emotional Calming',
-        ].filter(Boolean) as string[],
+        vitalsPlan: isCustomCarePlanEnabled
+          ? {
+              bpFrequency,
+              sugarFrequency,
+              spo2Monitoring: true,
+              bedTurningRequired: bedTurningRequired || mobilityLevel === 'bedridden',
+              bedTurningFrequencyHours: (bedTurningRequired || mobilityLevel === 'bedridden') ? 2 : 0,
+              bedTurnIntervalHours: (bedTurningRequired || mobilityLevel === 'bedridden') ? 2 : 0,
+              medicationReminders,
+              catheterCare,
+              woundDressing,
+            }
+          : {
+              ...getDefaultCarePlanForService(activeServiceId, currentServiceObj?.category),
+              spo2Monitoring: true,
+              bedTurnIntervalHours: (bedTurningRequired || mobilityLevel === 'bedridden') ? 2 : 0,
+            },
+        carePlanTasks: isCustomCarePlanEnabled && activeCareTasks.length > 0
+          ? activeCareTasks
+          : getDefaultCarePlanForService(activeServiceId, currentServiceObj?.category).carePlanTasks,
       };
 
       setIsSubmitting(true);
@@ -475,88 +510,226 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 />
               </div>
 
-              {/* Care Plan & Vitals Schedule Preferences Card */}
-              <div className="p-3.5 bg-blue-50/70 rounded-2xl border border-blue-200 space-y-2.5">
-                <div className="flex items-center gap-2">
-                  <Heart className="w-4 h-4 text-blue-600" />
-                  <span className="text-xs font-bold text-blue-900 uppercase tracking-wide">
-                    {language === 'si' ? 'සායනික Vitals සහ Care Plan අවශ්‍යතා' : 'Clinical Care & Vitals Schedule'}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                      {language === 'si' ? 'රුධිර පීඩන (BP) පරීක්ෂාව' : 'Blood Pressure (BP)'}
-                    </label>
-                    <select
-                      value={bpFrequency}
-                      onChange={(e) => setBpFrequency(e.target.value as any)}
-                      className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs bg-white focus:outline-blue-600"
-                    >
-                      <option value="none">Not Required</option>
-                      <option value="1x_daily">Once Daily (උදෑසන)</option>
-                      <option value="2x_daily">Twice Daily (උදේ & සවස)</option>
-                      <option value="4x_daily">4 Times Daily (Special Care)</option>
-                    </select>
+              {/* Care Plan & Vitals Schedule Preferences (Optional Add-on) */}
+              <div className="p-4 bg-gradient-to-r from-blue-50/90 to-indigo-50/80 rounded-2xl border border-blue-200 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-blue-600" />
+                    <span className="text-xs font-bold text-blue-900 uppercase tracking-wide">
+                      {language === 'si' ? 'සායනික Vitals සහ Care Plan සකස් කිරීම' : 'Clinical Vitals & Bedside Care Plan'}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
+                      {language === 'si' ? 'අවශ්‍ය නම් පමණක් (Optional)' : 'Optional Add-on'}
+                    </span>
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                      {language === 'si' ? 'රුධිර සීනි (Sugar) පරීක්ෂාව' : 'Blood Sugar Testing'}
-                    </label>
-                    <select
-                      value={sugarFrequency}
-                      onChange={(e) => setSugarFrequency(e.target.value as any)}
-                      className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs bg-white focus:outline-blue-600"
-                    >
-                      <option value="none">Not Required</option>
-                      <option value="fasting">Fasting Blood Sugar (FBS)</option>
-                      <option value="fasting_and_pp">Fasting + Post-Meal (2x)</option>
-                      <option value="random">Random Blood Sugar Check</option>
-                    </select>
-                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer select-none bg-white/80 px-3 py-1.5 rounded-xl border border-blue-200 hover:bg-white transition-all shadow-2xs">
+                    <input
+                      type="checkbox"
+                      checked={isCustomCarePlanEnabled}
+                      onChange={(e) => setIsCustomCarePlanEnabled(e.target.checked)}
+                      className="w-4 h-4 text-blue-600 rounded-sm focus:ring-blue-500 cursor-pointer"
+                    />
+                    <span className="text-xs font-bold text-blue-900">
+                      {isCustomCarePlanEnabled
+                        ? (language === 'si' ? 'Plan එක සක්‍රීයයි' : 'Plan Customizer Active')
+                        : (language === 'si' ? '+ Plan එක සකස් කරන්න' : '+ Customize Care Plan')}
+                    </span>
+                  </label>
                 </div>
 
-                {/* Additional Clinical Protocol Checkboxes */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 text-[11.5px] text-slate-700">
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={bedTurningRequired || mobilityLevel === 'bedridden'}
-                      onChange={(e) => setBedTurningRequired(e.target.checked)}
-                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span>{language === 'si' ? 'පැය 2න් 2ට පැත්ත මාරු කිරීම (Bed-turns)' : '2-Hour Bed Repositioning'}</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={medicationReminders}
-                      onChange={(e) => setMedicationReminders(e.target.checked)}
-                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span>{language === 'si' ? 'ඖෂධ ලබා දීමේ මතක් කිරීම්' : 'Medication Reminders'}</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={catheterCare}
-                      onChange={(e) => setCatheterCare(e.target.checked)}
-                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span>{language === 'si' ? 'කැතීටර් / නළ පෝෂණ සත්කාරය' : 'Catheter / Tube Care'}</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={woundDressing}
-                      onChange={(e) => setWoundDressing(e.target.checked)}
-                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span>{language === 'si' ? 'තුවාල වෙළුම් සත්කාරය' : 'Wound Dressing'}</span>
-                  </label>
-                </div>
+                {!isCustomCarePlanEnabled ? (
+                  <div className="p-3 bg-white/80 rounded-xl border border-blue-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                    <div>
+                      <span className="font-bold text-slate-800 block">
+                        {language === 'si'
+                          ? `තෝරාගත් Package එකට (${currentServiceObj?.name[language] || currentServiceObj?.name.en || 'General Care'}) අදාළ සම්මත සායනික ක්‍රමවේදය ක්‍රියාත්මක වේ.`
+                          : `Standard clinical package protocol will be applied automatically for ${currentServiceObj?.name.en || 'selected service'}.`}
+                      </span>
+                      <span className="text-[11px] text-slate-500 mt-0.5 block">
+                        {language === 'si'
+                          ? 'ලෙඩාට විශේෂිත Vitals frequency හෝ bedside duties අවශ්‍ය නම් පමණක් ඉහත බොත්තම ඔබා customize කරන්න.'
+                          : 'Only enable if you have specialized bedside vitals or clinical instructions for the caregiver.'}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomCarePlanEnabled(true)}
+                      className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shrink-0 cursor-pointer shadow-2xs"
+                    >
+                      {language === 'si' ? '+ Customize කරන්න' : '+ Customize Now'}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3 pt-1 border-t border-blue-100">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-semibold text-blue-800">
+                        {language === 'si'
+                          ? `Package එක අනුව සකස් වූ නිර්දේශිත සත්කාර සැලැස්ම: ${currentServiceObj?.name[language] || currentServiceObj?.name.en}`
+                          : `Recommended plan optimized for: ${currentServiceObj?.name.en || 'Selected Service'}`}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (activeServiceId) {
+                            const selected = allServices.find((s) => s.id === activeServiceId);
+                            const plan = getDefaultCarePlanForService(activeServiceId, selected?.category);
+                            setBpFrequency(plan.bpFrequency);
+                            setSugarFrequency(plan.sugarFrequency);
+                            setBedTurningRequired(plan.bedTurningRequired);
+                            setMedicationReminders(plan.medicationReminders);
+                            setCatheterCare(plan.catheterCare || false);
+                            setWoundDressing(plan.woundDressing || false);
+                            setActiveCareTasks(plan.carePlanTasks);
+                          }
+                        }}
+                        className="text-[11px] font-bold text-blue-600 hover:underline cursor-pointer"
+                      >
+                        {language === 'si' ? 'Package Defaults වලට හරවන්න' : 'Reset to Package Defaults'}
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                          {language === 'si' ? 'රුධිර පීඩන (BP) පරීක්ෂාව' : 'Blood Pressure (BP) Frequency'}
+                        </label>
+                        <select
+                          value={bpFrequency}
+                          onChange={(e) => setBpFrequency(e.target.value)}
+                          className="w-full px-3 py-1.5 rounded-xl border border-slate-300 text-xs bg-white font-semibold focus:outline-blue-600"
+                        >
+                          <option value="none">Not Required (අවශ්‍ය නොවේ)</option>
+                          <option value="1x_daily">Once Daily (දිනකට 1 වරක් - උදෑසන)</option>
+                          <option value="2x_daily">Twice Daily (දිනකට 2 වරක් - උදේ සහ සවස)</option>
+                          <option value="thrice_daily">Thrice Daily (දිනකට 3 වරක්)</option>
+                          <option value="4x_daily">Every 4 Hours (පැය 4න් 4ට - Critical)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                          {language === 'si' ? 'රුධිර සීනි (Sugar) පරීක්ෂාව' : 'Blood Glucose (Sugar) Testing'}
+                        </label>
+                        <select
+                          value={sugarFrequency}
+                          onChange={(e) => setSugarFrequency(e.target.value)}
+                          className="w-full px-3 py-1.5 rounded-xl border border-slate-300 text-xs bg-white font-semibold focus:outline-blue-600"
+                        >
+                          <option value="none">Not Required (අවශ්‍ය නොවේ)</option>
+                          <option value="fasting">Morning Fasting (නිරාහාරව උදෑසන - FBS)</option>
+                          <option value="pre_meals">Pre-Meals (ආහාරයට පෙර - AC)</option>
+                          <option value="fasting_and_pp">Fasting + Post-Meal (උදේ නිරාහාරව + කෑමෙන් පසු - 2x)</option>
+                          <option value="random">Random Blood Sugar (අවශ්‍යතාව අනුව - RBS)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Protocol Switches */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11.5px] text-slate-700">
+                      <label className="flex items-center gap-2 p-2 bg-white/90 rounded-xl border border-blue-100 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={bedTurningRequired || mobilityLevel === 'bedridden'}
+                          onChange={(e) => setBedTurningRequired(e.target.checked)}
+                          className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="font-semibold">
+                          {language === 'si' ? 'පැය 2න් 2ට පැත්ත මාරු කිරීම (Bedsore Care)' : 'Strict 2-Hour Bed Repositioning'}
+                        </span>
+                      </label>
+                      <label className="flex items-center gap-2 p-2 bg-white/90 rounded-xl border border-blue-100 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={medicationReminders}
+                          onChange={(e) => setMedicationReminders(e.target.checked)}
+                          className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="font-semibold">
+                          {language === 'si' ? 'නියමිත වේලාවට ඖෂධ ලබා දීම' : 'Medication Reminders & Admin'}
+                        </span>
+                      </label>
+                      <label className="flex items-center gap-2 p-2 bg-white/90 rounded-xl border border-blue-100 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={catheterCare}
+                          onChange={(e) => setCatheterCare(e.target.checked)}
+                          className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="font-semibold">
+                          {language === 'si' ? 'කැතීටර් / නළ පෝෂණ සත්කාරය' : 'Catheter & Urine Bag Care'}
+                        </span>
+                      </label>
+                      <label className="flex items-center gap-2 p-2 bg-white/90 rounded-xl border border-blue-100 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={woundDressing}
+                          onChange={(e) => setWoundDressing(e.target.checked)}
+                          className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="font-semibold">
+                          {language === 'si' ? 'තුවාල වෙළුම් සත්කාරය' : 'Wound Dressing & Aseptic Care'}
+                        </span>
+                      </label>
+                    </div>
+
+                    {/* Active Bedside Routine Tasks Badges */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1.5">
+                        {language === 'si' ? 'ක්‍රියාත්මක Bedside Routine Tasks (ක්ලික් කර වෙනස් කරන්න):' : 'Active Bedside Routine Tasks (Click to Toggle):'}
+                      </label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {allStandardCareTasks.map((task) => {
+                          const isChecked = activeCareTasks.includes(task);
+                          return (
+                            <button
+                              key={task}
+                              type="button"
+                              onClick={() => handleToggleTask(task)}
+                              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${
+                                isChecked
+                                  ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
+                                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                              }`}
+                            >
+                              {task}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Add Custom Bedside Task */}
+                    <div className="pt-2 border-t border-blue-100">
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                        {language === 'si' ? '+ විශේෂිත අමතර Bedside Task එකක් ඇතුළත් කරන්න:' : '+ Add Custom Bedside Task:'}
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={customBedsideTaskInput}
+                          onChange={(e) => setCustomBedsideTaskInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleAddCustomTask();
+                            }
+                          }}
+                          placeholder={language === 'si' ? 'උදා: උදේ 8ට ඉන්සියුලින් විදීම, හවස ඇවිද්දවීම...' : 'e.g. Insulin injection at 8 AM, Assisted walking at 5 PM...'}
+                          className="flex-1 px-3 py-1.5 rounded-xl border border-slate-300 text-xs bg-white text-slate-900 focus:outline-blue-600"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddCustomTask}
+                          className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all cursor-pointer shadow-2xs shrink-0 flex items-center gap-1"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>{language === 'si' ? 'එක් කරන්න' : 'Add'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
