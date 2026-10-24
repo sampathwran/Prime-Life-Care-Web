@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { BookingSubmission } from '@/types';
 import { findBookingByCodeOrPhone, subscribeToBooking } from '@/lib/firestoreService';
-import { Search, CheckCircle, AlertCircle, Phone, Loader2, Radio, Heart, Activity, Clock, Calendar, Download, Plus, ShieldCheck, MapPin, Sparkles, Edit3, Trash2, Banknote, Landmark, Receipt, UserX, AlertTriangle } from 'lucide-react';
+import { Search, CheckCircle, AlertCircle, Phone, Loader2, Radio, Heart, Activity, Clock, Calendar, Download, Plus, ShieldCheck, Shield, MapPin, Sparkles, Edit3, Trash2, Banknote, Landmark, Receipt, UserX, AlertTriangle } from 'lucide-react';
 import { EditBookingModal } from './EditBookingModal';
 
 interface BookingTrackerProps {
@@ -375,9 +375,21 @@ export const BookingTracker: React.FC<BookingTrackerProps> = ({ bookings }) => {
                   </div>
                   <div>
                     <p className="text-slate-400 text-xs">{t.tracker.labelCaregiver}</p>
-                    <p className="font-bold text-emerald-700">
-                      {result.assignedCaregiverName || t.tracker.reviewingPool}
-                    </p>
+                    {result.status === 'pending_review' ? (
+                      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 mt-0.5">
+                        <Clock className="w-3.5 h-3.5 text-amber-600" />
+                        Pending Review (තවම පත් කර නොමැත)
+                      </span>
+                    ) : (result.status === 'caregiver_assigned' || result.status === 'in_progress' || result.status === 'completed') && result.assignedCaregiverName ? (
+                      <p className="font-bold text-emerald-700 mt-0.5 flex items-center gap-1.5">
+                        <Shield className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>{result.assignedCaregiverName}</span>
+                      </p>
+                    ) : (
+                      <p className="font-semibold text-slate-500 mt-0.5">
+                        {t.tracker.reviewingPool}
+                      </p>
+                    )}
                   </div>
                 </div>
 
