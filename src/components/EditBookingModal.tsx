@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { BookingSubmission, MobilityLevel, VitalsCarePlan } from '@/types';
+import { BookingSubmission, MobilityLevel, ShiftType, StaffTierId, VitalsCarePlan } from '@/types';
 import { updateBookingInFirestore, deleteOrCancelBookingFromFirestore } from '@/lib/firestoreService';
-import { districtList } from '@/data/services';
+import { districtList, initialServices } from '@/data/services';
+import { staffTiers } from '@/data/staffTiers';
+import { useLanguage } from '@/context/LanguageContext';
 import { allStandardCareTasks, getDefaultCarePlanForService } from '@/data/packageCarePlans';
 import {
   X,
@@ -19,7 +21,13 @@ import {
   Heart,
   ShieldCheck,
   AlertTriangle,
-  Plus
+  Plus,
+  Calendar,
+  Clock,
+  Sparkles,
+  Layers,
+  Baby,
+  RefreshCw
 } from 'lucide-react';
 
 interface EditBookingModalProps {
@@ -37,7 +45,22 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
   onBookingUpdated,
   onBookingDeleted
 }) => {
-  // Form fields
+  const { language } = useLanguage();
+
+  // Package & Tier
+  const [serviceId, setServiceId] = useState<string>('day_care_12h');
+  const [serviceName, setServiceName] = useState<string>('');
+  const [shiftType, setShiftType] = useState<ShiftType>('12h_day');
+  const [staffTierId, setStaffTierId] = useState<StaffTierId>('nvq_4_caregiver');
+  const [staffTierName, setStaffTierName] = useState<string>('NVQ 4 Certified');
+  const [priceLKR, setPriceLKR] = useState<number>(4500);
+  const [packageNotice, setPackageNotice] = useState<string | null>(null);
+
+  // Schedule & Duration
+  const [startDate, setStartDate] = useState<string>('');
+  const [durationDays, setDurationDays] = useState<number>(7);
+
+  // Patient Info
   const [patientName, setPatientName] = useState('');
   const [patientAge, setPatientAge] = useState<number>(75);
   const [patientGender, setPatientGender] = useState<'Male' | 'Female'>('Male');
@@ -51,7 +74,7 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
   const [contactName, setContactName] = useState('');
   const [contactPhone, setContactPhone] = useState('');
 
-  // Vitals & Care Plan
+  // Vitals & Bedside Care Plan
   const [bpFrequency, setBpFrequency] = useState<string>('twice_daily');
   const [sugarFrequency, setSugarFrequency] = useState<string>('morning_fasting');
   const [bedTurningRequired, setBedTurningRequired] = useState<boolean>(true);
@@ -66,30 +89,19 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const handleResetToPackageDefaults = () => {
-    if (booking) {
-      const plan = getDefaultCarePlanForService(booking.serviceId || booking.serviceName);
-      setBpFrequency(plan.bpFrequency);
-      setSugarFrequency(plan.sugarFrequency);
-      setBedTurningRequired(plan.bedTurningRequired);
-      setMedicationReminders(plan.medicationReminders);
-      setSelectedCareTasks(plan.carePlanTasks);
-    }
-  };
-
-  const handleAddCustomTask = () => {
-    if (customBedsideTaskInput.trim()) {
-      const task = customBedsideTaskInput.trim();
-      if (!selectedCareTasks.includes(task)) {
-        setSelectedCareTasks((prev) => [...prev, task]);
-      }
-      setCustomBedsideTaskInput('');
-    }
-  };
-
-  // Prefill state when booking opens
+  // Prefill state when modal opens
   useEffect(() => {
     if (booking) {
+      setServiceId(booking.serviceId || 'day_care_12h');
+      setServiceName(booking.serviceName || '');
+      setShiftType(booking.shiftType || '12h_day');
+      setStaffTierId(booking.staffTierId || 'nvq_4_caregiver');
+      setStaffTierName(booking.staffTierName || 'NVQ 4 Certified');
+      setPriceLKR(Number(booking.priceLKR) || 4500);
+
+      setStartDate(booking.startDate || new Date().toISOString().split('T')[0]);
+      setDurationDays(Number(booking.durationDays) || 7);
+
       setPatientName(booking.patientName || '');
       setPatientAge(booking.patientAge || 75);
       const isFemale = String(booking.patientGender || '').toLowerCase() === 'female';
@@ -108,23 +120,105 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
         setBedTurningRequired(booking.vitalsPlan.bedTurningRequired ?? true);
         setMedicationReminders(booking.vitalsPlan.medicationReminders ?? true);
       }
-      setSelectedCareTasks(booking.carePlanTasks || [
-        'BP & Pulse Monitoring',
-        'Blood Glucose (Sugar) Test',
-        '2-Hour Bed Repositioning (Bedsore Care)'
-      ]);
+      setSelectedCareTasks(
+        booking.carePlanTasks && booking.carePlanTasks.length > 0
+          ? booking.carePlanTasks
+          : getDefaultCarePlanForService(booking.serviceId || 'day_care_12h').carePlanTasks
+      );
       setShowDeleteConfirm(false);
       setFeedbackMsg(null);
+      setPackageNotice(null);
     }
   }, [booking, isOpen]);
 
   if (!isOpen || !booking) return null;
+
+  // Handle changing the Care Package / Service
+  const handleServiceChange = (newServiceId: string) => {
+    const selectedSvc = initialServices.find((s) => s.id === newServiceId);
+    if (!selectedSvc) return;
+
+    const newServiceName = selectedSvc.name[language] || selectedSvc.name.en;
+    setServiceId(newServiceId);
+    setServiceName(newServiceName);
+    setShiftType(selectedSvc.shiftType);
+
+    // Auto pick tier
+    const defaultTierId = selectedSvc.defaultTierId || 'nvq_4_caregiver';
+    const defaultTier = staffTiers.find((t) => t.id === defaultTierId) || staffTiers[2];
+    setStaffTierId(defaultTier.id);
+    setStaffTierName(defaultTier.name[language] || defaultTier.name.en);
+    setPriceLKR(defaultTier.dailyRateLKR);
+
+    // Auto-update care plan & vitals to the new package preset
+    const newPlan = getDefaultCarePlanForService(newServiceId, selectedSvc.category);
+    setBpFrequency(newPlan.bpFrequency);
+    setSugarFrequency(newPlan.sugarFrequency);
+    setBedTurningRequired(newPlan.bedTurningRequired);
+    setMedicationReminders(newPlan.medicationReminders);
+    setSelectedCareTasks(newPlan.carePlanTasks);
+
+    setPackageNotice(
+      `Package changed to "${newServiceName}". Care routine & vitals plan have been auto-adapted to this package protocol.`
+    );
+  };
+
+  // Handle changing Staff Tier
+  const handleTierChange = (tierId: StaffTierId) => {
+    const tier = staffTiers.find((t) => t.id === tierId);
+    if (!tier) return;
+    setStaffTierId(tier.id);
+    setStaffTierName(tier.name[language] || tier.name.en);
+    setPriceLKR(tier.dailyRateLKR);
+  };
+
+  // Reset Care Plan to current selected service defaults
+  const handleResetToPackageDefaults = () => {
+    const plan = getDefaultCarePlanForService(serviceId || booking.serviceId || booking.serviceName);
+    setBpFrequency(plan.bpFrequency);
+    setSugarFrequency(plan.sugarFrequency);
+    setBedTurningRequired(plan.bedTurningRequired);
+    setMedicationReminders(plan.medicationReminders);
+    setSelectedCareTasks(plan.carePlanTasks);
+    setPackageNotice('Reset vitals schedule and tasks to default package protocol.');
+  };
+
+  const handleAddCustomTask = () => {
+    if (customBedsideTaskInput.trim()) {
+      const task = customBedsideTaskInput.trim();
+      if (!selectedCareTasks.includes(task)) {
+        setSelectedCareTasks((prev) => [...prev, task]);
+      }
+      setCustomBedsideTaskInput('');
+    }
+  };
 
   const toggleTask = (task: string) => {
     setSelectedCareTasks((prev) =>
       prev.includes(task) ? prev.filter((t) => t !== task) : [...prev, task]
     );
   };
+
+  // Compute calculated end date
+  const computeEndDate = (start: string, days: number): string => {
+    if (!start) return '';
+    try {
+      const d = new Date(start);
+      if (isNaN(d.getTime())) return '';
+      d.setDate(d.getDate() + (days > 1 ? days - 1 : 0));
+      return d.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    } catch {
+      return '';
+    }
+  };
+
+  const totalCalculatedCost = (Number(priceLKR) || 4500) * (Number(durationDays) || 1);
+  const originalCost = Number(booking.totalCostLKR) || (Number(booking.priceLKR) || 4500) * (Number(booking.durationDays) || 7);
 
   const handleSaveChanges = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,6 +228,10 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
     }
     if (!contactPhone.trim()) {
       setFeedbackMsg({ type: 'error', text: 'Please enter a contact phone number.' });
+      return;
+    }
+    if (durationDays < 1) {
+      setFeedbackMsg({ type: 'error', text: 'Duration must be at least 1 day.' });
       return;
     }
 
@@ -150,6 +248,15 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
     };
 
     const updates: Partial<BookingSubmission> = {
+      serviceId,
+      serviceName,
+      shiftType,
+      staffTierId,
+      staffTierName,
+      priceLKR: Number(priceLKR),
+      startDate,
+      durationDays: Number(durationDays),
+      totalCostLKR: totalCalculatedCost,
       patientName: patientName.trim(),
       patientAge: Number(patientAge),
       patientGender,
@@ -172,10 +279,10 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
         ...updates
       };
       onBookingUpdated(updatedBooking);
-      setFeedbackMsg({ type: 'success', text: 'Booking details updated successfully!' });
+      setFeedbackMsg({ type: 'success', text: 'Booking details, package & dates updated successfully!' });
       setTimeout(() => {
         onClose();
-      }, 900);
+      }, 1000);
     } catch (err: unknown) {
       console.error('Update booking failed:', err);
       setFeedbackMsg({
@@ -213,9 +320,9 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs overflow-y-auto">
-      <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-6 animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-6 animate-in fade-in zoom-in-95 duration-200">
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-blue-50/70 to-indigo-50/70">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-blue-50/70 via-indigo-50/50 to-slate-50">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-xs">
               <Activity className="w-5 h-5" />
@@ -230,7 +337,7 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-500">
-                Update patient medical details, bedside vitals schedule, or care address.
+                Modify care package, dates, duration, medical bedside routine, or contact details.
               </p>
             </div>
           </div>
@@ -270,11 +377,11 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
               </div>
               <div className="flex-1">
                 <h4 className="text-sm font-bold text-rose-950">
-                  Are you sure you want to cancel and delete Booking {booking.bookingCode}?
+                  Are you sure you want to cancel Booking {booking.bookingCode}?
                 </h4>
                 <p className="text-xs text-rose-700 mt-1">
                   Patient: <span className="font-semibold">{booking.patientName}</span> ({booking.serviceName}).
-                  This booking will be cancelled and removed from active care duties. (Admin retains a 7-day archive record).
+                  This booking will be cancelled and removed from active caregiver duties. (Operations retains an archive record).
                 </p>
 
                 <div className="mt-3">
@@ -289,8 +396,8 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
                     <option value="Customer requested cancellation / schedule changed">
                       Schedule changed / Family plans changed
                     </option>
-                    <option value="Booked by mistake or duplicate entry">
-                      Booked by mistake or duplicate entry
+                    <option value="Booked by mistake or wrong package">
+                      Booked by mistake or wrong package
                     </option>
                     <option value="Patient admitted to hospital / recovered">
                       Patient admitted to hospital / recovered
@@ -335,18 +442,215 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
         ) : null}
 
         {/* Edit Form */}
-        <form onSubmit={handleSaveChanges} className="p-6 space-y-5 max-h-[72vh] overflow-y-auto">
-          {/* Section 1: Patient Details */}
+        <form onSubmit={handleSaveChanges} className="p-6 space-y-5 max-h-[74vh] overflow-y-auto">
+          {/* SECTION 1: CARE PACKAGE & STAFF TIER SELECTION */}
+          <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-50/60 to-blue-50/40 border border-indigo-100/90 space-y-3.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-black text-slate-900">
+                <Layers className="w-4 h-4 text-indigo-600" />
+                <span>Care Service Package & Staff Tier</span>
+              </div>
+              <span className="text-[11px] font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200">
+                LKR {priceLKR.toLocaleString()} / day
+              </span>
+            </div>
+
+            {/* Service Dropdown */}
+            <div>
+              <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                Select Service Package (e.g. Elderly, Child Care, Post-Surgery, Palliative)
+              </label>
+              <select
+                value={serviceId}
+                onChange={(e) => handleServiceChange(e.target.value)}
+                className="w-full text-xs font-bold p-2.5 rounded-xl bg-white border border-indigo-200 text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+              >
+                {initialServices.map((svc) => (
+                  <option key={svc.id} value={svc.id}>
+                    {svc.name[language] || svc.name.en} • ({svc.shiftType.replace('_', ' ')}) — LKR {svc.priceLKR.toLocaleString()}/day
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Notification when package is changed */}
+            {packageNotice && (
+              <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] font-semibold flex items-center gap-2 animate-in fade-in">
+                <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+                <span className="flex-1">{packageNotice}</span>
+                <button
+                  type="button"
+                  onClick={() => setPackageNotice(null)}
+                  className="text-amber-700 hover:text-amber-950 text-xs font-bold cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
+            {/* Staff Tier Selector */}
+            <div>
+              <label className="text-[11px] font-bold text-slate-700 block mb-1.5">
+                Staff Competency Tier:
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {staffTiers
+                  .filter((tier) => tier.id !== 'doctor' || serviceId === 'doctor_home_visit')
+                  .map((tier) => {
+                    const isSelected = staffTierId === tier.id;
+                    return (
+                      <button
+                        key={tier.id}
+                        type="button"
+                        onClick={() => handleTierChange(tier.id)}
+                        className={`p-2.5 rounded-xl text-left border transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-white border-indigo-600 ring-2 ring-indigo-500/30 shadow-xs'
+                            : 'bg-white/70 border-slate-200 hover:border-indigo-200 hover:bg-white'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className={`text-[11px] font-bold ${isSelected ? 'text-indigo-700' : 'text-slate-800'}`}>
+                            {tier.name[language] || tier.name.en}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-black text-slate-500 block mt-0.5">
+                          LKR {tier.dailyRateLKR.toLocaleString()}/day
+                        </span>
+                      </button>
+                    );
+                  })}
+              </div>
+            </div>
+          </div>
+
+          {/* SECTION 2: DATES, DURATION & COST CALCULATION */}
+          <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200/90 space-y-3.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-black text-slate-900">
+                <Calendar className="w-4 h-4 text-emerald-600" />
+                <span>Duty Dates, Duration & Schedule</span>
+              </div>
+              <span className="text-[11px] font-black text-emerald-800 bg-emerald-100/80 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                {durationDays} {durationDays === 1 ? 'Day' : 'Days'} Total
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Start Date */}
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                  Care Start Date *
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full text-xs font-bold p-2.5 rounded-xl bg-white border border-emerald-300 text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </div>
+
+              {/* Shift Type */}
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                  Daily Shift Type
+                </label>
+                <select
+                  value={shiftType}
+                  onChange={(e) => setShiftType(e.target.value as ShiftType)}
+                  className="w-full text-xs font-bold p-2.5 rounded-xl bg-white border border-emerald-300 text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                >
+                  <option value="12h_day">12-Hour Day Shift (07 AM - 07 PM)</option>
+                  <option value="12h_night">12-Hour Night Shift (07 PM - 07 AM)</option>
+                  <option value="24h">24-Hour Full Day Care (Live-in)</option>
+                  <option value="visit">Single Clinical Consultation Visit</option>
+                </select>
+              </div>
+
+              {/* Custom Duration Number Input */}
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                  Duration (Number of Days) *
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="365"
+                  required
+                  value={durationDays}
+                  onChange={(e) => setDurationDays(Math.max(1, Number(e.target.value)))}
+                  className="w-full text-xs font-black p-2.5 rounded-xl bg-white border border-emerald-300 text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </div>
+            </div>
+
+            {/* Quick Duration Preset Pills */}
+            <div>
+              <span className="text-[10px] font-bold text-slate-500 block mb-1">
+                Quick Select Duration (Days):
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {[1, 3, 5, 7, 10, 14, 21, 30].map((days) => (
+                  <button
+                    key={days}
+                    type="button"
+                    onClick={() => setDurationDays(days)}
+                    className={`px-3 py-1 rounded-lg text-xs font-black border transition-all cursor-pointer ${
+                      durationDays === days
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs'
+                        : 'bg-white text-slate-700 border-emerald-200 hover:bg-emerald-100/50'
+                    }`}
+                  >
+                    {days === 1 ? '1 Day' : days === 30 ? '30 Days (1 Month)' : `${days} Days`}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Estimated Care Window & Pricing Summary Card */}
+            <div className="p-3 rounded-xl bg-white border border-emerald-200/90 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
+              <div className="space-y-0.5">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide block">
+                  Scheduled Care Window
+                </span>
+                <p className="text-xs font-bold text-slate-900">
+                  {startDate} → <span className="text-emerald-700">{computeEndDate(startDate, durationDays)}</span>
+                </p>
+              </div>
+
+              <div className="text-right">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide block">
+                  Total Estimated Fee
+                </span>
+                <div className="flex items-baseline gap-1.5 justify-end">
+                  {totalCalculatedCost !== originalCost && (
+                    <span className="text-xs text-slate-400 line-through">
+                      LKR {originalCost.toLocaleString()}
+                    </span>
+                  )}
+                  <span className="text-sm font-black text-emerald-800">
+                    LKR {totalCalculatedCost.toLocaleString()}
+                  </span>
+                </div>
+                <span className="text-[10px] text-slate-500">
+                  (LKR {priceLKR.toLocaleString()} × {durationDays} {durationDays === 1 ? 'day' : 'days'})
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* SECTION 3: PATIENT MEDICAL DETAILS */}
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
             <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
               <User className="w-4 h-4 text-blue-600" />
-              <span>Patient Medical Information</span>
+              <span>Patient / Recipient Medical Information</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="sm:col-span-2">
                 <label className="text-[11px] font-semibold text-slate-600 block mb-1">
-                  Patient Full Name *
+                  Recipient / Patient Full Name *
                 </label>
                 <input
                   type="text"
@@ -363,7 +667,7 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
                 </label>
                 <input
                   type="number"
-                  min="1"
+                  min="0"
                   max="120"
                   value={patientAge}
                   onChange={(e) => setPatientAge(Number(e.target.value))}
@@ -404,33 +708,33 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
                   onChange={(e) => setMobilityLevel(e.target.value as MobilityLevel)}
                   className="w-full text-xs p-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
                 >
-                  <option value="independent">Fully Mobile / Independent</option>
+                  <option value="independent">Fully Mobile / Independent / Child</option>
                   <option value="partial">Partial Assistance Required</option>
                   <option value="wheelchair">Wheelchair Bound</option>
-                  <option value="bedridden">Bedridden (High Care Need)</option>
+                  <option value="bedridden">Bedridden (High Clinical Need)</option>
                 </select>
               </div>
             </div>
 
             <div>
               <label className="text-[11px] font-semibold text-slate-600 block mb-1">
-                Medical Conditions & Clinical Notes
+                Medical Conditions / Routine Requirements
               </label>
               <textarea
                 rows={2}
                 value={medicalConditions}
                 onChange={(e) => setMedicalConditions(e.target.value)}
-                placeholder="e.g. Hypertension, Type 2 Diabetes, post-stroke rehab, needs walker support..."
+                placeholder="e.g. Hypertension, Diabetes, post-surgery recovery, toddler feeding assistance, special diet..."
                 className="w-full text-xs p-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
               />
             </div>
           </div>
 
-          {/* Section 2: Care Address & Guardian Contact */}
+          {/* SECTION 4: LOCATION & FAMILY CONTACT */}
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
             <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
               <MapPin className="w-4 h-4 text-blue-600" />
-              <span>Location & Family Contact</span>
+              <span>Location & Family Contact Details</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -510,19 +814,20 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
             </div>
           </div>
 
-          {/* Section 3: Vitals Care Plan & Bedside Routine */}
+          {/* SECTION 5: VITALS CARE PLAN & BEDSIDE TASKS */}
           <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-200/80 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
                 <Heart className="w-4 h-4 text-blue-600" />
-                <span>Vitals Monitoring & Bedside Tasks</span>
+                <span>Vitals Monitoring & Bedside Routine Tasks</span>
               </div>
               <button
                 type="button"
                 onClick={handleResetToPackageDefaults}
-                className="text-[11px] font-bold text-blue-600 hover:underline cursor-pointer"
+                className="text-[11px] font-bold text-blue-600 hover:underline cursor-pointer flex items-center gap-1"
               >
-                Reset to {booking.serviceName} Defaults
+                <RefreshCw className="w-3 h-3" />
+                <span>Reset to {serviceName || 'Package'} Defaults</span>
               </button>
             </div>
 
@@ -536,11 +841,11 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
                   onChange={(e) => setBpFrequency(e.target.value)}
                   className="w-full text-xs p-2 rounded-xl bg-white border border-blue-200 text-slate-900 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
                 >
-                  <option value="none">Not Required</option>
+                  <option value="none">Not Required / Child</option>
                   <option value="1x_daily">Once Daily (Morning)</option>
                   <option value="twice_daily">Twice Daily (Morning & Evening)</option>
                   <option value="thrice_daily">Thrice Daily (TDS)</option>
-                  <option value="every_4_hours">Every 4 Hours (Critical)</option>
+                  <option value="every_4_hours">Every 4 Hours (Critical / Post-Op)</option>
                   <option value="as_needed">As Needed (PRN)</option>
                 </select>
               </div>
@@ -585,7 +890,7 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
                   className="w-4 h-4 text-blue-600 rounded-sm focus:ring-blue-500"
                 />
                 <span className="text-xs font-semibold text-slate-800">
-                  Medication Administration Reminders
+                  Medication Reminders & Dispensing
                 </span>
               </label>
             </div>
@@ -618,7 +923,7 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
             {/* Add Custom Bedside Task */}
             <div className="pt-2 border-t border-blue-100">
               <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                + Add Custom Bedside Task:
+                + Add Custom Task (e.g. Toddler formula feeding, Nebulizer, Walker support):
               </label>
               <div className="flex items-center gap-2">
                 <input
@@ -631,7 +936,7 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
                       handleAddCustomTask();
                     }
                   }}
-                  placeholder="e.g. Nebulizer twice daily, Walker support, Special low-salt meal..."
+                  placeholder="e.g. Baby formula feeding every 3 hours, Special low-salt meal, Walker assistance..."
                   className="flex-1 px-3 py-1.5 rounded-xl border border-slate-300 text-xs bg-white text-slate-900 focus:outline-blue-600"
                 />
                 <button
@@ -646,7 +951,7 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
             </div>
           </div>
 
-          {/* Modal Actions */}
+          {/* MODAL ACTIONS */}
           <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
             <button
               type="button"

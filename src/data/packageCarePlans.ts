@@ -19,7 +19,12 @@ export const allStandardCareTasks = [
   'Sponging, Bed Bath & Oral Hygiene',
   'Passive Limb Physiotherapy & Calming',
   'Fluid Intake & Output (I/O) Monitoring',
-  'Fall Prevention & Assisted Walking'
+  'Fall Prevention & Assisted Walking',
+  'Meal Preparation & Feeding Assistance',
+  'Playtime & Safe Activity Supervision',
+  'Nap & Sleep Routine Care',
+  'Infant Feeding & Burping Routine',
+  'Umbilical Cord & Baby Bath Care'
 ];
 
 export function getDefaultCarePlanForService(serviceId: string, category?: string): DefaultCarePlan {
@@ -84,21 +89,40 @@ export function getDefaultCarePlanForService(serviceId: string, category?: strin
     };
   }
 
-  // 4. Newborn Mother & Baby Care
-  if (sId.includes('newborn') || sId.includes('baby') || sId.includes('mother') || cat.includes('child_care')) {
+  // 4. Child & Toddler Care / Babysitting
+  if (sId.includes('child') || sId.includes('toddler')) {
+    return {
+      bpFrequency: 'none',
+      sugarFrequency: 'none',
+      bedTurningRequired: false,
+      medicationReminders: false,
+      carePlanTasks: [
+        'Meal Preparation & Feeding Assistance',
+        'Oral Hygiene & Bathing Assistance',
+        'Playtime & Safe Activity Supervision',
+        'Nap & Sleep Routine Care'
+      ]
+    };
+  }
+
+  // 5. Newborn Mother & Baby Care
+  if (sId.includes('newborn') || sId.includes('baby') || sId.includes('mother')) {
     return {
       bpFrequency: '1x_daily',
       sugarFrequency: 'none',
       bedTurningRequired: false,
       medicationReminders: false,
       carePlanTasks: [
+        'Infant Feeding & Burping Routine',
+        'Umbilical Cord & Baby Bath Care',
         'Sponging, Bed Bath & Oral Hygiene',
+        'Nap & Sleep Routine Care',
         'BP & Pulse Monitoring'
       ]
     };
   }
 
-  // 5. Default General Elderly Care (12h Day, 12h Night, 24h Full Day)
+  // 6. Default General Elderly Care (12h Day, 12h Night, 24h Full Day)
   return {
     bpFrequency: '2x_daily',
     sugarFrequency: 'fasting',
