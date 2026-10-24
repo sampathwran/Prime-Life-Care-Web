@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { BookingSubmission } from '@/types';
 import { findBookingByCodeOrPhone, subscribeToBooking } from '@/lib/firestoreService';
-import { Search, CheckCircle, AlertCircle, Phone, Loader2, Radio, Heart, Activity, Clock, Calendar, Download, Plus, ShieldCheck, MapPin, Sparkles } from 'lucide-react';
+import { Search, CheckCircle, AlertCircle, Phone, Loader2, Radio, Heart, Activity, Clock, Calendar, Download, Plus, ShieldCheck, MapPin, Sparkles, Edit3, Trash2 } from 'lucide-react';
+import { EditBookingModal } from './EditBookingModal';
 
 interface BookingTrackerProps {
   bookings: BookingSubmission[];
@@ -16,6 +17,8 @@ export const BookingTracker: React.FC<BookingTrackerProps> = ({ bookings }) => {
   const [searched, setSearched] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [result, setResult] = useState<BookingSubmission | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [cancellationAlert, setCancellationAlert] = useState<string | null>(null);
 
   // Subscribe to live Firestore updates when a booking code is selected
   useEffect(() => {
@@ -135,6 +138,13 @@ export const BookingTracker: React.FC<BookingTrackerProps> = ({ bookings }) => {
         </form>
 
         {/* Search Result */}
+        {cancellationAlert && (
+          <div className="mb-4 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{cancellationAlert}</span>
+          </div>
+        )}
+
         {searched && (
           <div>
             {result ? (
@@ -144,8 +154,20 @@ export const BookingTracker: React.FC<BookingTrackerProps> = ({ bookings }) => {
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t.tracker.bookingCodeLabel}</span>
                     <h3 className="text-2xl font-black text-slate-900">{result.bookingCode}</h3>
                   </div>
-                  <div className={`px-4 py-2 rounded-xl border text-xs font-bold ${getStatusInfo(result.status).color}`}>
-                    {getStatusInfo(result.status).label}
+                  <div className="flex items-center gap-2">
+                    <div className={`px-4 py-2 rounded-xl border text-xs font-bold ${getStatusInfo(result.status).color}`}>
+                      {getStatusInfo(result.status).label}
+                    </div>
+                    {result.status !== 'completed' && (
+                      <button
+                        type="button"
+                        onClick={() => setIsEditModalOpen(true)}
+                        className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 text-xs font-bold border border-slate-200 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                      >
+                        <Edit3 className="w-3.5 h-3.5 text-blue-600" />
+                        <span>Edit / Cancel</span>
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -358,6 +380,18 @@ export const BookingTracker: React.FC<BookingTrackerProps> = ({ bookings }) => {
                       <Download className="w-3.5 h-3.5 text-slate-600" />
                       <span>Print Clinical Summary</span>
                     </button>
+
+                    {/* Edit / Cancel Booking Button */}
+                    {result.status !== 'completed' && (
+                      <button
+                        type="button"
+                        onClick={() => setIsEditModalOpen(true)}
+                        className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-slate-300 shadow-2xs"
+                      >
+                        <Edit3 className="w-3.5 h-3.5 text-blue-600" />
+                        <span>Edit / Cancel Booking</span>
+                      </button>
+                    )}
                   </div>
 
                   <a
@@ -379,6 +413,24 @@ export const BookingTracker: React.FC<BookingTrackerProps> = ({ bookings }) => {
             )}
           </div>
         )}
+
+        {/* Global Edit & Delete Booking Modal */}
+        <EditBookingModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          booking={result}
+          onBookingUpdated={(updated) => {
+            setResult(updated);
+            setCancellationAlert('Booking information updated successfully.');
+            setTimeout(() => setCancellationAlert(null), 5000);
+          }}
+          onBookingDeleted={(code) => {
+            setResult(null);
+            setSearched(false);
+            setCancellationAlert(`Booking ${code} was cancelled & deleted successfully.`);
+            setTimeout(() => setCancellationAlert(null), 6000);
+          }}
+        />
       </div>
     </section>
   );

@@ -9,6 +9,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { AuthModal } from '@/components/AuthModal';
 import { BookingModal } from '@/components/BookingModal';
+import { EditBookingModal } from '@/components/EditBookingModal';
 import { BookingSubmission, EquipmentOrder, PaymentRecord, SavedPatient } from '@/types';
 import { districtList } from '@/data/services';
 import {
@@ -77,6 +78,8 @@ export default function ProfilePage() {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [bookingPrefillPatient, setBookingPrefillPatient] = useState<SavedPatient | null>(null);
   const [showSignOutModal, setShowSignOutModal] = useState(false);
+  const [isEditBookingModalOpen, setIsEditBookingModalOpen] = useState(false);
+  const [selectedBookingForEdit, setSelectedBookingForEdit] = useState<BookingSubmission | null>(null);
 
   // Edit Profile Form State
   const [name, setName] = useState(user?.name || '');
@@ -1115,7 +1118,22 @@ export default function ProfilePage() {
                             )}
                             <span className="text-xs text-slate-400">Date: {b.startDate}</span>
                           </div>
-                          {getStatusBadge(b.status)}
+                          <div className="flex items-center gap-2">
+                            {getStatusBadge(b.status)}
+                            {b.status !== 'completed' && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedBookingForEdit(b);
+                                  setIsEditBookingModalOpen(true);
+                                }}
+                                className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 text-xs font-bold border border-slate-200 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                              >
+                                <Edit3 className="w-3.5 h-3.5 text-blue-600" />
+                                <span>Edit / Delete</span>
+                              </button>
+                            )}
+                          </div>
                         </div>
 
                         {/* Step Progress Bar (Real-time Duty Stages) */}
@@ -1875,6 +1893,24 @@ export default function ProfilePage() {
         }}
         onBookingSubmitted={(newBooking: BookingSubmission) => {
           setBookings((prev) => [newBooking, ...prev]);
+        }}
+      />
+
+      {/* Global Edit & Delete Booking Modal */}
+      <EditBookingModal
+        isOpen={isEditBookingModalOpen}
+        onClose={() => {
+          setIsEditBookingModalOpen(false);
+          setSelectedBookingForEdit(null);
+        }}
+        booking={selectedBookingForEdit}
+        onBookingUpdated={(updated) => {
+          setBookings((prev) =>
+            prev.map((b) => (b.bookingCode === updated.bookingCode ? updated : b))
+          );
+        }}
+        onBookingDeleted={(code) => {
+          setBookings((prev) => prev.filter((b) => b.bookingCode !== code));
         }}
       />
 

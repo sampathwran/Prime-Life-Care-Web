@@ -89,6 +89,7 @@ export interface EquipmentOrder {
   contactPhone: string;
   status: 'order_received' | 'processing' | 'dispatched' | 'delivered';
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface SavedPatient {
@@ -123,6 +124,7 @@ export interface UserProfile {
   savedPatients?: SavedPatient[];
   notifications?: UserNotification[];
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface PaymentRecord {
@@ -137,16 +139,20 @@ export interface PaymentRecord {
   receiptUrl?: string;
 }
 
+export type MobilityLevel = 'independent' | 'partial_assistance' | 'bedridden' | 'wheelchair' | 'partial';
+
 export interface VitalsCarePlan {
   bpFrequency?: 'none' | '1x_daily' | '2x_daily' | '4x_daily' | string;
   sugarFrequency?: 'none' | 'fasting' | 'fasting_and_pp' | 'random' | string;
   spo2Monitoring?: boolean;
   bedTurningRequired?: boolean;
   bedTurningFrequencyHours?: number;
+  bedTurnIntervalHours?: number;
   medicationReminders?: boolean;
   catheterCare?: boolean;
   woundDressing?: boolean;
   physioExercises?: boolean;
+  notes?: string;
 }
 
 export interface ShiftAttendanceRecord {
@@ -179,8 +185,8 @@ export interface BookingSubmission {
   priceLKR: number;
   patientName: string;
   patientAge: number;
-  patientGender: 'male' | 'female';
-  mobilityLevel: 'independent' | 'partial_assistance' | 'bedridden' | 'wheelchair';
+  patientGender: 'male' | 'female' | 'Male' | 'Female' | string;
+  mobilityLevel: MobilityLevel | string;
   medicalConditions: string;
   district: string;
   city: string;
@@ -200,6 +206,7 @@ export interface BookingSubmission {
   assignedCaregiverPhone?: string;
   paymentStatus: 'unpaid' | 'advance_paid' | 'fully_paid';
   createdAt: string;
+  updatedAt?: string;
   vitalsPlan?: VitalsCarePlan;
   carePlanTasks?: string[];
   isCaregiverCheckedIn?: boolean;

@@ -7,7 +7,9 @@ import {
   query,
   where,
   orderBy,
-  onSnapshot
+  onSnapshot,
+  deleteDoc,
+  updateDoc
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { BookingSubmission, EquipmentOrder, ServiceItem, ServiceTierOption } from '@/types';
@@ -96,6 +98,71 @@ export function subscribeToBooking(
       console.warn('[Firestore] Booking subscription error:', err);
     }
   );
+}
+
+/**
+ * Update an existing booking in Firestore
+ */
+export async function updateBookingInFirestore(
+  bookingCode: string,
+  updates: Partial<BookingSubmission>
+): Promise<void> {
+  try {
+    const code = bookingCode.trim().toUpperCase();
+    const docRef = doc(db, 'bookings', code);
+    await setDoc(docRef, {
+      ...updates,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+    console.log('[Firestore] Booking updated successfully:', code);
+  } catch (error) {
+    console.error('[Firestore] Error updating booking:', error);
+    throw error;
+  }
+}
+
+/**
+ * Delete or cancel a booking from Firestore, archiving to deleted_bookings for 7-day retention
+ */
+export async function deleteOrCancelBookingFromFirestore(
+  bookingCode: string,
+  bookingData?: Partial<BookingSubmission>,
+  reason: string = 'Cancelled by customer'
+): Promise<void> {
+  try {
+    const code = bookingCode.trim().toUpperCase();
+    const docRef = doc(db, 'bookings', code);
+
+    // Fetch latest data if not provided
+    let fullData = bookingData;
+    if (!fullData || !fullData.bookingCode) {
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        fullData = snap.data() as BookingSubmission;
+      }
+    }
+
+    // 1. Archive to deleted_bookings collection (7-day retention matching Flutter Admin)
+    const archiveRef = doc(db, 'deleted_bookings', code);
+    await setDoc(archiveRef, {
+      ...(fullData || {}),
+      id: code,
+      bookingCode: code,
+      originalDocId: code,
+      deletedAt: new Date().toISOString(),
+      deletedBy: 'Customer (Web Portal)',
+      cancellationReason: reason,
+      status: 'cancelled',
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+    }, { merge: true });
+
+    // 2. Delete from active bookings
+    await deleteDoc(docRef);
+    console.log('[Firestore] Booking archived and deleted successfully:', code);
+  } catch (error) {
+    console.error('[Firestore] Error deleting booking:', error);
+    throw error;
+  }
 }
 
 /**
