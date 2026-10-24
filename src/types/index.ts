@@ -137,6 +137,36 @@ export interface PaymentRecord {
   receiptUrl?: string;
 }
 
+export interface VitalsCarePlan {
+  bpFrequency?: 'none' | '1x_daily' | '2x_daily' | '4x_daily' | string;
+  sugarFrequency?: 'none' | 'fasting' | 'fasting_and_pp' | 'random' | string;
+  spo2Monitoring?: boolean;
+  bedTurningRequired?: boolean;
+  bedTurningFrequencyHours?: number;
+  medicationReminders?: boolean;
+  catheterCare?: boolean;
+  woundDressing?: boolean;
+  physioExercises?: boolean;
+}
+
+export interface ShiftAttendanceRecord {
+  id?: string;
+  shiftDate?: string; // "YYYY-MM-DD"
+  date?: string;
+  checkInTime?: string;
+  clockInTime?: string;
+  checkOutTime?: string;
+  clockOutTime?: string;
+  checkInLocation?: string;
+  workedMinutes?: number;
+  hours?: number | string;
+  status?: 'in_progress' | 'completed' | 'approved' | 'flagged' | string;
+  vitalsCount?: number;
+  bedTurnsCount?: number;
+  handoverNotes?: string;
+  caregiverName?: string;
+}
+
 export interface BookingSubmission {
   id: string;
   userId?: string;
@@ -155,6 +185,9 @@ export interface BookingSubmission {
   district: string;
   city: string;
   address: string;
+  latitude?: number;
+  longitude?: number;
+  googleMapsUrl?: string;
   contactName: string;
   contactPhone: string;
   contactEmail?: string;
@@ -162,11 +195,18 @@ export interface BookingSubmission {
   durationDays: number;
   totalCostLKR?: number;
   specialNotes?: string;
-  status: 'pending_review' | 'caregiver_assigned' | 'in_progress' | 'completed';
+  status: 'pending_review' | 'in_process' | 'broadcasted' | 'caregiver_assigned' | 'in_progress' | 'completed';
   assignedCaregiverName?: string;
   assignedCaregiverPhone?: string;
   paymentStatus: 'unpaid' | 'advance_paid' | 'fully_paid';
   createdAt: string;
+  vitalsPlan?: VitalsCarePlan;
+  carePlanTasks?: string[];
+  isCaregiverCheckedIn?: boolean;
+  lastCheckInTime?: string;
+  lastCheckOutTime?: string;
+  completedShiftsCount?: number;
+  shifts?: ShiftAttendanceRecord[];
 }
 
 export interface GoogleReviewItem {

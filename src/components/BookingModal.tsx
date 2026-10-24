@@ -8,7 +8,7 @@ import { districtList } from '@/data/services';
 import { staffTiers } from '@/data/staffTiers';
 import { saveBookingToFirestore } from '@/lib/firestoreService';
 import { initialServices } from '@/data/services';
-import { X, CheckCircle, ArrowRight, ArrowLeft, MessageSquare, Heart, Lock, User, LogIn, Award, Stethoscope, Loader2 } from 'lucide-react';
+import { X, CheckCircle, ArrowRight, ArrowLeft, MessageSquare, Heart, Lock, User, LogIn, Award, Stethoscope, Loader2, MapPin, Navigation, ExternalLink } from 'lucide-react';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -43,9 +43,48 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   const [mobilityLevel, setMobilityLevel] = useState<'independent' | 'partial_assistance' | 'bedridden' | 'wheelchair'>('partial_assistance');
   const [medicalConditions, setMedicalConditions] = useState('');
   
+  // Care Plan & Vitals Schedule Preferences
+  const [bpFrequency, setBpFrequency] = useState<'none' | '1x_daily' | '2x_daily' | '4x_daily'>('2x_daily');
+  const [sugarFrequency, setSugarFrequency] = useState<'none' | 'fasting' | 'fasting_and_pp' | 'random'>('fasting');
+  const [bedTurningRequired, setBedTurningRequired] = useState(false);
+  const [medicationReminders, setMedicationReminders] = useState(true);
+  const [catheterCare, setCatheterCare] = useState(false);
+  const [woundDressing, setWoundDressing] = useState(false);
+  
   const [district, setDistrict] = useState(districtList[0]);
   const [city, setCity] = useState('');
   const [address, setAddress] = useState('');
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+  const [googleMapsUrl, setGoogleMapsUrl] = useState<string>('');
+  const [isLocating, setIsLocating] = useState<boolean>(false);
+  const [locationStatusMsg, setLocationStatusMsg] = useState<string>('');
+
+  const handleDetectLocation = () => {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      setLocationStatusMsg('Geolocation is not supported by your browser');
+      return;
+    }
+    setIsLocating(true);
+    setLocationStatusMsg('');
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = Number(position.coords.latitude.toFixed(6));
+        const lng = Number(position.coords.longitude.toFixed(6));
+        setLatitude(lat);
+        setLongitude(lng);
+        const mapUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+        setGoogleMapsUrl(mapUrl);
+        setIsLocating(false);
+        setLocationStatusMsg('✓ Location captured successfully via GPS!');
+      },
+      (error) => {
+        setIsLocating(false);
+        setLocationStatusMsg('Could not detect GPS automatically. You can paste a Google Maps link or enter coordinates below.');
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
   
   const [contactName, setContactName] = useState('');
   const [contactPhone, setContactPhone] = useState('');
@@ -123,6 +162,9 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         district,
         city: city || 'Colombo',
         address: address || user.address || 'House address provided',
+        latitude: latitude ?? undefined,
+        longitude: longitude ?? undefined,
+        googleMapsUrl: googleMapsUrl || (latitude && longitude ? `https://www.google.com/maps?q=${latitude},${longitude}` : undefined),
         contactName: contactName || user.name,
         contactPhone: contactPhone || user.phone,
         contactEmail: user.email,
@@ -132,7 +174,27 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         specialNotes,
         status: 'pending_review',
         paymentStatus: 'unpaid',
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        vitalsPlan: {
+          bpFrequency,
+          sugarFrequency,
+          spo2Monitoring: true,
+          bedTurningRequired: bedTurningRequired || mobilityLevel === 'bedridden',
+          bedTurningFrequencyHours: (bedTurningRequired || mobilityLevel === 'bedridden') ? 2 : 0,
+          medicationReminders,
+          catheterCare,
+          woundDressing,
+        },
+        carePlanTasks: [
+          medicationReminders ? 'Prescription Medication Administration' : null,
+          bpFrequency !== 'none' ? `Blood Pressure Check (${bpFrequency})` : null,
+          sugarFrequency !== 'none' ? `Blood Sugar Test (${sugarFrequency})` : null,
+          (bedTurningRequired || mobilityLevel === 'bedridden') ? '2-Hour Bedsore Repositioning Protocol' : null,
+          catheterCare ? 'Catheter / Ryles Tube Hygiene' : null,
+          woundDressing ? 'Aseptic Wound Dressing Care' : null,
+          'Daily Hydration & Nutrition Tracking',
+          'Bedside Comfort & Emotional Calming',
+        ].filter(Boolean) as string[],
       };
 
       setIsSubmitting(true);
@@ -412,6 +474,90 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-emerald-600"
                 />
               </div>
+
+              {/* Care Plan & Vitals Schedule Preferences Card */}
+              <div className="p-3.5 bg-blue-50/70 rounded-2xl border border-blue-200 space-y-2.5">
+                <div className="flex items-center gap-2">
+                  <Heart className="w-4 h-4 text-blue-600" />
+                  <span className="text-xs font-bold text-blue-900 uppercase tracking-wide">
+                    {language === 'si' ? 'සායනික Vitals සහ Care Plan අවශ්‍යතා' : 'Clinical Care & Vitals Schedule'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      {language === 'si' ? 'රුධිර පීඩන (BP) පරීක්ෂාව' : 'Blood Pressure (BP)'}
+                    </label>
+                    <select
+                      value={bpFrequency}
+                      onChange={(e) => setBpFrequency(e.target.value as any)}
+                      className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs bg-white focus:outline-blue-600"
+                    >
+                      <option value="none">Not Required</option>
+                      <option value="1x_daily">Once Daily (උදෑසන)</option>
+                      <option value="2x_daily">Twice Daily (උදේ & සවස)</option>
+                      <option value="4x_daily">4 Times Daily (Special Care)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      {language === 'si' ? 'රුධිර සීනි (Sugar) පරීක්ෂාව' : 'Blood Sugar Testing'}
+                    </label>
+                    <select
+                      value={sugarFrequency}
+                      onChange={(e) => setSugarFrequency(e.target.value as any)}
+                      className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs bg-white focus:outline-blue-600"
+                    >
+                      <option value="none">Not Required</option>
+                      <option value="fasting">Fasting Blood Sugar (FBS)</option>
+                      <option value="fasting_and_pp">Fasting + Post-Meal (2x)</option>
+                      <option value="random">Random Blood Sugar Check</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Additional Clinical Protocol Checkboxes */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 text-[11.5px] text-slate-700">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={bedTurningRequired || mobilityLevel === 'bedridden'}
+                      onChange={(e) => setBedTurningRequired(e.target.checked)}
+                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span>{language === 'si' ? 'පැය 2න් 2ට පැත්ත මාරු කිරීම (Bed-turns)' : '2-Hour Bed Repositioning'}</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={medicationReminders}
+                      onChange={(e) => setMedicationReminders(e.target.checked)}
+                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span>{language === 'si' ? 'ඖෂධ ලබා දීමේ මතක් කිරීම්' : 'Medication Reminders'}</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={catheterCare}
+                      onChange={(e) => setCatheterCare(e.target.checked)}
+                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span>{language === 'si' ? 'කැතීටර් / නළ පෝෂණ සත්කාරය' : 'Catheter / Tube Care'}</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={woundDressing}
+                      onChange={(e) => setWoundDressing(e.target.checked)}
+                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span>{language === 'si' ? 'තුවාල වෙළුම් සත්කාරය' : 'Wound Dressing'}</span>
+                  </label>
+                </div>
+              </div>
             </div>
           )}
 
@@ -457,6 +603,102 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   placeholder="e.g. No 45/2, Temple Road, near St. Joseph Church"
                   className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-emerald-600"
                 />
+              </div>
+
+              {/* Google Map Exact Location Pinning */}
+              <div className="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200 shadow-2xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-2xs">
+                      <MapPin className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900">
+                        {language === 'si' ? 'රෝගියාගේ නිවසේ සිතියම් ස්ථානය (Google Map Pin)' : 'Patient Residence Google Map Pin'}
+                      </h4>
+                      <p className="text-[11px] text-slate-500">
+                        {language === 'si' ? 'සාත්තු සේවකයාට පහසුවෙන් නිවස සොයාගැනීමට GPS මඟින් සලකුණු කරන්න' : 'Allows caregivers and operations dispatch to navigate directly via GPS'}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleDetectLocation}
+                    disabled={isLocating}
+                    className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    {isLocating ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>{language === 'si' ? 'හඳුනාගනිමින්...' : 'Locating...'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Navigation className="w-3.5 h-3.5" />
+                        <span>{language === 'si' ? '⚡ මගේ GPS ස්ථානය ලබාගන්න' : '⚡ Use My GPS'}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {locationStatusMsg && (
+                  <div className={`text-xs px-3 py-1.5 rounded-xl font-medium ${locationStatusMsg.startsWith('✓') ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                    {locationStatusMsg}
+                  </div>
+                )}
+
+                {/* Google Maps Coordinates Inputs */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 uppercase mb-0.5">Latitude (අක්ෂාංශය)</label>
+                    <input
+                      type="number"
+                      step="0.000001"
+                      value={latitude ?? ''}
+                      onChange={(e) => {
+                        const val = e.target.value ? parseFloat(e.target.value) : null;
+                        setLatitude(val);
+                        if (val && longitude) setGoogleMapsUrl(`https://www.google.com/maps?q=${val},${longitude}`);
+                      }}
+                      placeholder="e.g. 6.927079"
+                      className="w-full px-3 py-1.5 rounded-xl border border-slate-300 bg-white text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 uppercase mb-0.5">Longitude (දේශාංශය)</label>
+                    <input
+                      type="number"
+                      step="0.000001"
+                      value={longitude ?? ''}
+                      onChange={(e) => {
+                        const val = e.target.value ? parseFloat(e.target.value) : null;
+                        setLongitude(val);
+                        if (latitude && val) setGoogleMapsUrl(`https://www.google.com/maps?q=${latitude},${val}`);
+                      }}
+                      placeholder="e.g. 79.861244"
+                      className="w-full px-3 py-1.5 rounded-xl border border-slate-300 bg-white text-xs"
+                    />
+                  </div>
+                </div>
+
+                {/* Live Google Maps Link & Coordinates Display */}
+                {latitude && longitude && (
+                  <div className="pt-1 flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-emerald-900 flex items-center gap-1">
+                      <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                      Pinned: {latitude.toFixed(5)}, {longitude.toFixed(5)}
+                    </span>
+                    <a
+                      href={`https://www.google.com/maps?q=${latitude},${longitude}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-bold text-emerald-700 hover:text-emerald-900 flex items-center gap-1 underline underline-offset-2"
+                    >
+                      <span>{language === 'si' ? 'Google Maps හි බලන්න' : 'Preview on Google Maps'}</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
           )}
