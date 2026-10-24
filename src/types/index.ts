@@ -205,6 +205,17 @@ export interface BookingSubmission {
   assignedCaregiverName?: string;
   assignedCaregiverPhone?: string;
   paymentStatus: 'unpaid' | 'advance_paid' | 'fully_paid';
+  paymentMethod?: 'bank_transfer' | 'cash_to_caregiver' | 'cash_on_duty';
+  advancePaymentOption?: 'pay_on_duty' | 'pay_advance' | 'advance_paid' | 'full_paid';
+  advanceAmountLKR?: number;
+  transferReference?: string;
+  caregiverChangeRequest?: {
+    requested: boolean;
+    reason: string;
+    requestedAt: string;
+    status: 'pending' | 'reviewed' | 'resolved';
+    resolvedAt?: string;
+  };
   createdAt: string;
   updatedAt?: string;
   vitalsPlan?: VitalsCarePlan;

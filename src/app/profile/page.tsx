@@ -49,7 +49,9 @@ import {
   ExternalLink,
   ShieldCheck,
   Sparkles,
-  FileText
+  FileText,
+  Banknote,
+  Landmark
 } from 'lucide-react';
 
 export default function ProfilePage() {
@@ -1234,6 +1236,67 @@ export default function ProfilePage() {
                             )}
                           </div>
                         </div>
+
+                        {/* Caregiver Change Request Notice */}
+                        {b.caregiverChangeRequest?.requested && (
+                          <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-start gap-2.5">
+                            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                            <div>
+                              <span className="font-bold">Care Worker Replacement Request Pending Review</span>
+                              <p className="text-[11px] text-amber-800 mt-0.5">&ldquo;{b.caregiverChangeRequest.reason}&rdquo;</p>
+                              <span className="text-[10px] text-amber-600">Submitted on {new Date(b.caregiverChangeRequest.requestedAt).toLocaleDateString()} • Operations is matching a replacement</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Completed Duty Payment History & Settlement Record */}
+                        {b.status === 'completed' && (
+                          <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-2 text-xs">
+                            <div className="flex items-center justify-between border-b border-emerald-100 pb-2">
+                              <span className="font-black text-emerald-950 uppercase tracking-wide flex items-center gap-1.5">
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                                Duty Completed & Payment Settled (සේවය අවසන්)
+                              </span>
+                              <span className="px-2.5 py-0.5 rounded-full bg-emerald-200 text-emerald-900 text-[10px] font-black uppercase">
+                                {b.paymentStatus === 'fully_paid' ? 'Fully Paid' : 'Settled on Duty'}
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] pt-1">
+                              <div>
+                                <span className="text-slate-400 block text-[10px]">Payment Method:</span>
+                                <strong className="text-slate-800 font-bold flex items-center gap-1 mt-0.5">
+                                  {b.paymentMethod === 'bank_transfer' ? (
+                                    <>
+                                      <Landmark className="w-3.5 h-3.5 text-blue-600" />
+                                      <span>Bank Transfer</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Banknote className="w-3.5 h-3.5 text-emerald-600" />
+                                      <span>Cash to Caregiver</span>
+                                    </>
+                                  )}
+                                </strong>
+                              </div>
+                              <div>
+                                <span className="text-slate-400 block text-[10px]">Total Shifts Served:</span>
+                                <strong className="text-slate-800 font-bold mt-0.5 block">{b.completedShiftsCount || b.durationDays} Days</strong>
+                              </div>
+                              <div>
+                                <span className="text-slate-400 block text-[10px]">Advance Settled:</span>
+                                <strong className="text-blue-700 font-bold mt-0.5 block">
+                                  {b.advanceAmountLKR && b.advanceAmountLKR > 0 ? `LKR ${b.advanceAmountLKR.toLocaleString()}` : 'None'}
+                                </strong>
+                              </div>
+                              <div>
+                                <span className="text-slate-400 block text-[10px]">Balance Settled:</span>
+                                <strong className="text-emerald-800 font-black mt-0.5 block">
+                                  LKR {Math.max(0, (b.totalCostLKR || b.priceLKR) - (b.advanceAmountLKR || 0)).toLocaleString()}
+                                </strong>
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
                       </div>
                     ))

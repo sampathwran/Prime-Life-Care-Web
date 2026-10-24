@@ -9,7 +9,7 @@ import { staffTiers } from '@/data/staffTiers';
 import { saveBookingToFirestore } from '@/lib/firestoreService';
 import { initialServices } from '@/data/services';
 import { getDefaultCarePlanForService, allStandardCareTasks } from '@/data/packageCarePlans';
-import { X, CheckCircle, ArrowRight, ArrowLeft, MessageSquare, Heart, Lock, User, LogIn, Award, Stethoscope, Loader2, MapPin, Navigation, ExternalLink, Plus, Trash2, Sparkles, Activity } from 'lucide-react';
+import { X, CheckCircle, ArrowRight, ArrowLeft, MessageSquare, Heart, Lock, User, LogIn, Award, Stethoscope, Loader2, MapPin, Navigation, ExternalLink, Plus, Trash2, Sparkles, Activity, Banknote, Landmark, CreditCard, Receipt } from 'lucide-react';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -127,6 +127,12 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   const [durationDays, setDurationDays] = useState<number>(7);
   const [specialNotes, setSpecialNotes] = useState('');
 
+  // Payment method & advance payment states
+  const [paymentMethod, setPaymentMethod] = useState<'cash_to_caregiver' | 'bank_transfer'>('cash_to_caregiver');
+  const [advancePaymentOption, setAdvancePaymentOption] = useState<'pay_on_duty' | 'pay_advance'>('pay_on_duty');
+  const [advanceAmountLKR, setAdvanceAmountLKR] = useState<number>(0);
+  const [transferReference, setTransferReference] = useState<string>('');
+
   // Confirmation state
   const [confirmedBooking, setConfirmedBooking] = useState<BookingSubmission | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -208,7 +214,11 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         totalCostLKR: totalAmount,
         specialNotes,
         status: 'pending_review',
-        paymentStatus: 'unpaid',
+        paymentStatus: advancePaymentOption === 'pay_advance' && advanceAmountLKR > 0 ? 'advance_paid' : 'unpaid',
+        paymentMethod,
+        advancePaymentOption,
+        advanceAmountLKR: advancePaymentOption === 'pay_advance' ? advanceAmountLKR : 0,
+        transferReference: paymentMethod === 'bank_transfer' && transferReference ? transferReference.trim() : undefined,
         createdAt: new Date().toISOString(),
         vitalsPlan: isCustomCarePlanEnabled
           ? {
@@ -944,6 +954,193 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 />
               </div>
 
+              {/* Payment Method Selection */}
+              <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-200/80 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-slate-900 uppercase tracking-wide">
+                    Payment Method (ගෙවීම් ක්‍රමය) *
+                  </label>
+                  <span className="text-[10px] text-blue-700 font-bold bg-blue-100/70 px-2 py-0.5 rounded-md">
+                    Cash or Bank Transfer
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {/* Cash to Caregiver */}
+                  <div
+                    onClick={() => setPaymentMethod('cash_to_caregiver')}
+                    className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer flex items-start gap-3 ${
+                      paymentMethod === 'cash_to_caregiver'
+                        ? 'bg-emerald-50/80 border-emerald-600 shadow-xs'
+                        : 'bg-white border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    <div className={`p-2 rounded-lg shrink-0 ${paymentMethod === 'cash_to_caregiver' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                      <Banknote className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-slate-900 block">
+                        Cash to Caregiver on Duty
+                      </span>
+                      <span className="text-[11px] text-slate-500 block mt-0.5 leading-snug">
+                        Pay cash directly to your assigned care worker on duty upon arrival or shift handover.
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Bank Transfer */}
+                  <div
+                    onClick={() => setPaymentMethod('bank_transfer')}
+                    className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer flex items-start gap-3 ${
+                      paymentMethod === 'bank_transfer'
+                        ? 'bg-blue-50/80 border-blue-600 shadow-xs'
+                        : 'bg-white border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    <div className={`p-2 rounded-lg shrink-0 ${paymentMethod === 'bank_transfer' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                      <Landmark className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-slate-900 block">
+                        Direct Bank Transfer
+                      </span>
+                      <span className="text-[11px] text-slate-500 block mt-0.5 leading-snug">
+                        Deposit or online transfer to Prime Life Care company corporate account.
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bank Account Details (shown if Bank Transfer chosen) */}
+                {paymentMethod === 'bank_transfer' && (
+                  <div className="mt-2.5 p-3.5 rounded-xl bg-white border border-blue-200 text-xs text-blue-950 space-y-2.5 animate-in fade-in">
+                    <div className="flex items-center justify-between border-b border-blue-100 pb-1.5">
+                      <span className="font-bold text-[11px] uppercase tracking-wide text-blue-900">Official Company Bank Account</span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">Commercial Bank</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-[11px]">
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Account Name:</span>
+                        <span className="font-bold text-slate-900">Prime Life Care (Pvt) Ltd</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Account Number:</span>
+                        <span className="font-mono font-bold text-blue-700 text-xs">1000 489 231</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Bank:</span>
+                        <span className="font-semibold text-slate-800">Commercial Bank of Ceylon</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Branch:</span>
+                        <span className="font-semibold text-slate-800">Kollupitiya (035)</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-blue-950 block mb-1">
+                        Bank Transfer Reference / Deposit Slip No. (Optional):
+                      </label>
+                      <input
+                        type="text"
+                        value={transferReference}
+                        onChange={(e) => setTransferReference(e.target.value)}
+                        placeholder="e.g. Ref: TXN-49102 or Slip No."
+                        className="w-full text-xs p-2 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 focus:outline-blue-600"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Advance Payment Preference */}
+                <div className="pt-2 border-t border-blue-200/60">
+                  <label className="block text-xs font-bold text-slate-800 mb-1.5">
+                    Advance Payment Option (අත්තිකාරම් මුදලක් ගෙවීමට අවශ්‍යද?):
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAdvancePaymentOption('pay_on_duty');
+                        setAdvanceAmountLKR(0);
+                      }}
+                      className={`p-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer text-left ${
+                        advancePaymentOption === 'pay_on_duty'
+                          ? 'bg-slate-900 text-white border-slate-900 shadow-2xs'
+                          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      <span>Pay on Duty / Shifts</span>
+                      <span className="text-[10px] block opacity-80 font-normal">Pay when service begins</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAdvancePaymentOption('pay_advance');
+                        const total = effectiveDailyRate * (Number(durationDays) || 7);
+                        if (advanceAmountLKR === 0) {
+                          setAdvanceAmountLKR(Math.round(total * 0.20));
+                        }
+                      }}
+                      className={`p-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer text-left ${
+                        advancePaymentOption === 'pay_advance'
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs'
+                          : 'bg-white text-slate-700 border-slate-200 hover:bg-emerald-50/50'
+                      }`}
+                    >
+                      <span>Pay Advance Now</span>
+                      <span className="text-[10px] block opacity-80 font-normal">Confirm with partial deposit</span>
+                    </button>
+                  </div>
+
+                  {advancePaymentOption === 'pay_advance' && (
+                    <div className="mt-2.5 p-3 rounded-xl bg-white border border-emerald-300 text-xs space-y-2 animate-in fade-in">
+                      {(() => {
+                        const total = effectiveDailyRate * (Number(durationDays) || 7);
+                        return (
+                          <>
+                            <div className="flex items-center justify-between">
+                              <span className="font-semibold text-slate-700">Quick Advance Percentage:</span>
+                              <div className="flex gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => setAdvanceAmountLKR(Math.round(total * 0.20))}
+                                  className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 text-[10px] font-bold border border-emerald-200 hover:bg-emerald-100 cursor-pointer"
+                                >
+                                  20% (LKR {Math.round(total * 0.20).toLocaleString()})
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setAdvanceAmountLKR(Math.round(total * 0.50))}
+                                  className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 text-[10px] font-bold border border-emerald-200 hover:bg-emerald-100 cursor-pointer"
+                                >
+                                  50% (LKR {Math.round(total * 0.50).toLocaleString()})
+                                </button>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-slate-600">LKR</span>
+                              <input
+                                type="number"
+                                min={500}
+                                max={total}
+                                value={advanceAmountLKR}
+                                onChange={(e) => setAdvanceAmountLKR(Number(e.target.value))}
+                                className="flex-1 text-xs font-bold p-1.5 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 focus:outline-emerald-600"
+                              />
+                            </div>
+                            <div className="flex justify-between text-[11px] text-emerald-800 pt-1 border-t border-slate-100 font-semibold">
+                              <span>Advance to Pay: LKR {advanceAmountLKR.toLocaleString()}</span>
+                              <span>Remaining on Duty: LKR {Math.max(0, total - advanceAmountLKR).toLocaleString()}</span>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Estimate Breakdown */}
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs text-slate-600 space-y-1">
                 <div className="flex items-center justify-between">
@@ -992,6 +1189,10 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 <p><strong>Staff Tier:</strong> {confirmedBooking.staffTierName}</p>
                 <p><strong>Patient:</strong> {confirmedBooking.patientName} ({confirmedBooking.patientAge} yrs)</p>
                 <p><strong>Location:</strong> {confirmedBooking.city}, {confirmedBooking.district}</p>
+                <p><strong>Payment Method:</strong> {confirmedBooking.paymentMethod === 'bank_transfer' ? 'Direct Bank Transfer (Prime Life Care A/C 1000489231)' : 'Cash to Caregiver on Duty'}</p>
+                {confirmedBooking.advanceAmountLKR && confirmedBooking.advanceAmountLKR > 0 ? (
+                  <p><strong>Advance Amount:</strong> LKR {confirmedBooking.advanceAmountLKR.toLocaleString()} (Remaining Due: LKR {Math.max(0, (confirmedBooking.totalCostLKR || 0) - confirmedBooking.advanceAmountLKR).toLocaleString()})</p>
+                ) : null}
                 <p><strong>Account:</strong> {confirmedBooking.contactEmail}</p>
               </div>
 

@@ -22,12 +22,17 @@ import {
   ShieldCheck,
   AlertTriangle,
   Plus,
+  Minus,
   Calendar,
   Clock,
   Sparkles,
   Layers,
   Baby,
-  RefreshCw
+  RefreshCw,
+  UserCheck,
+  UserX,
+  Send,
+  MessageSquare
 } from 'lucide-react';
 
 interface EditBookingModalProps {
@@ -56,9 +61,15 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
   const [priceLKR, setPriceLKR] = useState<number>(4500);
   const [packageNotice, setPackageNotice] = useState<string | null>(null);
 
-  // Schedule & Duration
+  // Schedule & Duration (Extend / Shorten)
   const [startDate, setStartDate] = useState<string>('');
   const [durationDays, setDurationDays] = useState<number>(7);
+
+  // Caregiver Replacement Request
+  const [showReplacementForm, setShowReplacementForm] = useState<boolean>(false);
+  const [replacementReason, setReplacementReason] = useState<string>('');
+  const [isSubmittingReplacement, setIsSubmittingReplacement] = useState<boolean>(false);
+  const [replacementFeedback, setReplacementFeedback] = useState<string | null>(null);
 
   // Patient Info
   const [patientName, setPatientName] = useState('');
@@ -125,13 +136,74 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
           ? booking.carePlanTasks
           : getDefaultCarePlanForService(booking.serviceId || 'day_care_12h').carePlanTasks
       );
+
       setShowDeleteConfirm(false);
       setFeedbackMsg(null);
       setPackageNotice(null);
+      setShowReplacementForm(false);
+      setReplacementReason('');
+      setReplacementFeedback(null);
     }
   }, [booking, isOpen]);
 
   if (!isOpen || !booking) return null;
+
+  // Handle Extend or Shorten Duration
+  const handleAdjustDuration = (deltaDays: number) => {
+    setDurationDays((prev) => Math.max(1, prev + deltaDays));
+  };
+
+  // Handle Caregiver Replacement Request
+  const handleSubmitReplacementRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!replacementReason.trim() || replacementReason.trim().length < 5) {
+      setFeedbackMsg({
+        type: 'error',
+        text: 'Please type a clear reason for requesting a caregiver replacement (හේතුව සඳහන් කිරීම අනිවාර්යයි).'
+      });
+      return;
+    }
+
+    setIsSubmittingReplacement(true);
+    setFeedbackMsg(null);
+
+    const changeRequest = {
+      requested: true,
+      reason: replacementReason.trim(),
+      requestedAt: new Date().toISOString(),
+      status: 'pending' as const
+    };
+
+    try {
+      await updateBookingInFirestore(booking.bookingCode, {
+        caregiverChangeRequest: changeRequest,
+        updatedAt: new Date().toISOString()
+      });
+
+      const updatedBooking: BookingSubmission = {
+        ...booking,
+        caregiverChangeRequest: changeRequest
+      };
+      onBookingUpdated(updatedBooking);
+
+      setReplacementFeedback(
+        'Caregiver replacement request has been submitted to Operations Admin. Our team will review your reason and assign a qualified alternative staff member.'
+      );
+      setShowReplacementForm(false);
+      setFeedbackMsg({
+        type: 'success',
+        text: 'Caregiver replacement request submitted successfully!'
+      });
+    } catch (err) {
+      console.error('Failed to submit replacement request:', err);
+      setFeedbackMsg({
+        type: 'error',
+        text: 'Failed to submit replacement request. Please check your internet connection.'
+      });
+    } finally {
+      setIsSubmittingReplacement(false);
+    }
+  };
 
   // Handle changing the Care Package / Service
   const handleServiceChange = (newServiceId: string) => {
@@ -143,14 +215,12 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
     setServiceName(newServiceName);
     setShiftType(selectedSvc.shiftType);
 
-    // Auto pick tier
     const defaultTierId = selectedSvc.defaultTierId || 'nvq_4_caregiver';
     const defaultTier = staffTiers.find((t) => t.id === defaultTierId) || staffTiers[2];
     setStaffTierId(defaultTier.id);
     setStaffTierName(defaultTier.name[language] || defaultTier.name.en);
     setPriceLKR(defaultTier.dailyRateLKR);
 
-    // Auto-update care plan & vitals to the new package preset
     const newPlan = getDefaultCarePlanForService(newServiceId, selectedSvc.category);
     setBpFrequency(newPlan.bpFrequency);
     setSugarFrequency(newPlan.sugarFrequency);
@@ -172,7 +242,6 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
     setPriceLKR(tier.dailyRateLKR);
   };
 
-  // Reset Care Plan to current selected service defaults
   const handleResetToPackageDefaults = () => {
     const plan = getDefaultCarePlanForService(serviceId || booking.serviceId || booking.serviceName);
     setBpFrequency(plan.bpFrequency);
@@ -199,7 +268,6 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
     );
   };
 
-  // Compute calculated end date
   const computeEndDate = (start: string, days: number): string => {
     if (!start) return '';
     try {
@@ -279,7 +347,7 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
         ...updates
       };
       onBookingUpdated(updatedBooking);
-      setFeedbackMsg({ type: 'success', text: 'Booking details, package & dates updated successfully!' });
+      setFeedbackMsg({ type: 'success', text: 'Care plan duration and booking details updated successfully!' });
       setTimeout(() => {
         onClose();
       }, 1000);
@@ -330,14 +398,14 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-black text-slate-900">
-                  Edit Booking • {booking.bookingCode}
+                  Manage Booking • {booking.bookingCode}
                 </h3>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 text-blue-800">
                   {booking.status?.replace('_', ' ')}
                 </span>
               </div>
               <p className="text-xs text-slate-500">
-                Modify care package, dates, duration, medical bedside routine, or contact details.
+                Extend or shorten care plan duration, or submit a request to change your assigned caregiver.
               </p>
             </div>
           </div>
@@ -381,7 +449,7 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
                 </h4>
                 <p className="text-xs text-rose-700 mt-1">
                   Patient: <span className="font-semibold">{booking.patientName}</span> ({booking.serviceName}).
-                  This booking will be cancelled and removed from active caregiver duties. (Operations retains an archive record).
+                  This booking will be cancelled and archived.
                 </p>
 
                 <div className="mt-3">
@@ -396,8 +464,8 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
                     <option value="Customer requested cancellation / schedule changed">
                       Schedule changed / Family plans changed
                     </option>
-                    <option value="Booked by mistake or wrong package">
-                      Booked by mistake or wrong package
+                    <option value="Booked by mistake or duplicate">
+                      Booked by mistake or duplicate
                     </option>
                     <option value="Patient admitted to hospital / recovered">
                       Patient admitted to hospital / recovered
@@ -441,188 +509,106 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
           </div>
         ) : null}
 
-        {/* Edit Form */}
-        <form onSubmit={handleSaveChanges} className="p-6 space-y-5 max-h-[74vh] overflow-y-auto">
-          {/* SECTION 1: CARE PACKAGE & STAFF TIER SELECTION */}
-          <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-50/60 to-blue-50/40 border border-indigo-100/90 space-y-3.5">
+        {/* Content Body */}
+        <div className="p-6 space-y-5 max-h-[74vh] overflow-y-auto">
+          {/* SECTION 1: EXTEND OR SHORTEN CARE PLAN (PRIMARY FEATURE) */}
+          <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50/80 via-teal-50/50 to-white border-2 border-emerald-300/80 shadow-xs space-y-3.5">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-black text-slate-900">
-                <Layers className="w-4 h-4 text-indigo-600" />
-                <span>Care Service Package & Staff Tier</span>
+              <div className="flex items-center gap-2 text-xs font-black text-emerald-950">
+                <Calendar className="w-4 h-4 text-emerald-700" />
+                <span>Extend or Shorten Care Plan (දින ගණන දික් කිරීම හෝ කෙටි කිරීම)</span>
               </div>
-              <span className="text-[11px] font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200">
-                LKR {priceLKR.toLocaleString()} / day
-              </span>
-            </div>
-
-            {/* Service Dropdown */}
-            <div>
-              <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                Select Service Package (e.g. Elderly, Child Care, Post-Surgery, Palliative)
-              </label>
-              <select
-                value={serviceId}
-                onChange={(e) => handleServiceChange(e.target.value)}
-                className="w-full text-xs font-bold p-2.5 rounded-xl bg-white border border-indigo-200 text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
-              >
-                {initialServices.map((svc) => (
-                  <option key={svc.id} value={svc.id}>
-                    {svc.name[language] || svc.name.en} • ({svc.shiftType.replace('_', ' ')}) — LKR {svc.priceLKR.toLocaleString()}/day
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Notification when package is changed */}
-            {packageNotice && (
-              <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] font-semibold flex items-center gap-2 animate-in fade-in">
-                <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
-                <span className="flex-1">{packageNotice}</span>
-                <button
-                  type="button"
-                  onClick={() => setPackageNotice(null)}
-                  className="text-amber-700 hover:text-amber-950 text-xs font-bold cursor-pointer"
-                >
-                  ✕
-                </button>
-              </div>
-            )}
-
-            {/* Staff Tier Selector */}
-            <div>
-              <label className="text-[11px] font-bold text-slate-700 block mb-1.5">
-                Staff Competency Tier:
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {staffTiers
-                  .filter((tier) => tier.id !== 'doctor' || serviceId === 'doctor_home_visit')
-                  .map((tier) => {
-                    const isSelected = staffTierId === tier.id;
-                    return (
-                      <button
-                        key={tier.id}
-                        type="button"
-                        onClick={() => handleTierChange(tier.id)}
-                        className={`p-2.5 rounded-xl text-left border transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-white border-indigo-600 ring-2 ring-indigo-500/30 shadow-xs'
-                            : 'bg-white/70 border-slate-200 hover:border-indigo-200 hover:bg-white'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className={`text-[11px] font-bold ${isSelected ? 'text-indigo-700' : 'text-slate-800'}`}>
-                            {tier.name[language] || tier.name.en}
-                          </span>
-                        </div>
-                        <span className="text-[10px] font-black text-slate-500 block mt-0.5">
-                          LKR {tier.dailyRateLKR.toLocaleString()}/day
-                        </span>
-                      </button>
-                    );
-                  })}
-              </div>
-            </div>
-          </div>
-
-          {/* SECTION 2: DATES, DURATION & COST CALCULATION */}
-          <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200/90 space-y-3.5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-black text-slate-900">
-                <Calendar className="w-4 h-4 text-emerald-600" />
-                <span>Duty Dates, Duration & Schedule</span>
-              </div>
-              <span className="text-[11px] font-black text-emerald-800 bg-emerald-100/80 px-2.5 py-0.5 rounded-full border border-emerald-200">
+              <span className="text-xs font-black text-emerald-900 bg-emerald-100 px-3 py-0.5 rounded-full border border-emerald-200">
                 {durationDays} {durationDays === 1 ? 'Day' : 'Days'} Total
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {/* Start Date */}
-              <div>
-                <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                  Care Start Date *
-                </label>
-                <input
-                  type="date"
-                  required
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full text-xs font-bold p-2.5 rounded-xl bg-white border border-emerald-300 text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
-                />
-              </div>
+            <p className="text-xs text-emerald-800 leading-snug">
+              Need to extend your patient&apos;s recovery period or conclude duty earlier? Adjust the duration below:
+            </p>
 
-              {/* Shift Type */}
-              <div>
-                <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                  Daily Shift Type
-                </label>
-                <select
-                  value={shiftType}
-                  onChange={(e) => setShiftType(e.target.value as ShiftType)}
-                  className="w-full text-xs font-bold p-2.5 rounded-xl bg-white border border-emerald-300 text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+            {/* Quick Extension & Shortening Action Buttons */}
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[11px] font-bold text-slate-600 shrink-0">Extend (දික් කරගන්න):</span>
+                <button
+                  type="button"
+                  onClick={() => handleAdjustDuration(3)}
+                  className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-2xs cursor-pointer flex items-center gap-1"
                 >
-                  <option value="12h_day">12-Hour Day Shift (07 AM - 07 PM)</option>
-                  <option value="12h_night">12-Hour Night Shift (07 PM - 07 AM)</option>
-                  <option value="24h">24-Hour Full Day Care (Live-in)</option>
-                  <option value="visit">Single Clinical Consultation Visit</option>
-                </select>
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>+3 Days</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleAdjustDuration(7)}
+                  className="px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition-all shadow-2xs cursor-pointer flex items-center gap-1"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>+7 Days (1 Week)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleAdjustDuration(14)}
+                  className="px-3 py-1.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold transition-all shadow-2xs cursor-pointer flex items-center gap-1"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>+14 Days (2 Weeks)</span>
+                </button>
               </div>
 
-              {/* Custom Duration Number Input */}
+              <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-emerald-200/60">
+                <span className="text-[11px] font-bold text-slate-600 shrink-0">Shorten (කෙටි කරගන්න):</span>
+                <button
+                  type="button"
+                  disabled={durationDays <= 1}
+                  onClick={() => handleAdjustDuration(-1)}
+                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all border border-slate-300 disabled:opacity-40 cursor-pointer flex items-center gap-1"
+                >
+                  <Minus className="w-3.5 h-3.5" />
+                  <span>-1 Day</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={durationDays <= 3}
+                  onClick={() => handleAdjustDuration(-3)}
+                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all border border-slate-300 disabled:opacity-40 cursor-pointer flex items-center gap-1"
+                >
+                  <Minus className="w-3.5 h-3.5" />
+                  <span>-3 Days</span>
+                </button>
+                <div className="flex items-center gap-1 ml-auto">
+                  <span className="text-[11px] font-semibold text-slate-600">Exact Days:</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max="365"
+                    value={durationDays}
+                    onChange={(e) => setDurationDays(Math.max(1, Number(e.target.value)))}
+                    className="w-16 px-2 py-1 rounded-lg border border-emerald-300 bg-white font-black text-xs text-center text-slate-900 focus:outline-emerald-600"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Schedule & Fee Preview */}
+            <div className="p-3 rounded-xl bg-white border border-emerald-200 flex flex-wrap items-center justify-between gap-3 text-xs">
               <div>
-                <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                  Duration (Number of Days) *
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="365"
-                  required
-                  value={durationDays}
-                  onChange={(e) => setDurationDays(Math.max(1, Number(e.target.value)))}
-                  className="w-full text-xs font-black p-2.5 rounded-xl bg-white border border-emerald-300 text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
-                />
-              </div>
-            </div>
-
-            {/* Quick Duration Preset Pills */}
-            <div>
-              <span className="text-[10px] font-bold text-slate-500 block mb-1">
-                Quick Select Duration (Days):
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {[1, 3, 5, 7, 10, 14, 21, 30].map((days) => (
-                  <button
-                    key={days}
-                    type="button"
-                    onClick={() => setDurationDays(days)}
-                    className={`px-3 py-1 rounded-lg text-xs font-black border transition-all cursor-pointer ${
-                      durationDays === days
-                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs'
-                        : 'bg-white text-slate-700 border-emerald-200 hover:bg-emerald-100/50'
-                    }`}
-                  >
-                    {days === 1 ? '1 Day' : days === 30 ? '30 Days (1 Month)' : `${days} Days`}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Estimated Care Window & Pricing Summary Card */}
-            <div className="p-3 rounded-xl bg-white border border-emerald-200/90 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
-              <div className="space-y-0.5">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide block">
-                  Scheduled Care Window
-                </span>
-                <p className="text-xs font-bold text-slate-900">
+                <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wide">Revised Schedule</span>
+                <p className="font-bold text-slate-900 mt-0.5">
                   {startDate} → <span className="text-emerald-700">{computeEndDate(startDate, durationDays)}</span>
                 </p>
+                {durationDays !== booking.durationDays && (
+                  <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md inline-block mt-0.5">
+                    {durationDays > booking.durationDays
+                      ? `Extended by +${durationDays - booking.durationDays} days`
+                      : `Shortened by -${booking.durationDays - durationDays} days`}
+                  </span>
+                )}
               </div>
 
               <div className="text-right">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide block">
-                  Total Estimated Fee
-                </span>
+                <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wide">Revised Total Fee</span>
                 <div className="flex items-baseline gap-1.5 justify-end">
                   {totalCalculatedCost !== originalCost && (
                     <span className="text-xs text-slate-400 line-through">
@@ -633,363 +619,232 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
                     LKR {totalCalculatedCost.toLocaleString()}
                   </span>
                 </div>
-                <span className="text-[10px] text-slate-500">
-                  (LKR {priceLKR.toLocaleString()} × {durationDays} {durationDays === 1 ? 'day' : 'days'})
+                <span className="text-[10px] text-slate-400">
+                  (LKR {priceLKR.toLocaleString()} / day)
                 </span>
               </div>
             </div>
           </div>
 
-          {/* SECTION 3: PATIENT MEDICAL DETAILS */}
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
-              <User className="w-4 h-4 text-blue-600" />
-              <span>Patient / Recipient Medical Information</span>
+          {/* SECTION 2: REQUEST CAREGIVER / CARE WORKER REPLACEMENT (REASON MANDATORY) */}
+          <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/90 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-black text-amber-950">
+                <UserCheck className="w-4 h-4 text-amber-600" />
+                <span>Care Worker Replacement Request (සේවකයා මාරු කරගැනීම)</span>
+              </div>
+              {booking.assignedCaregiverName && (
+                <span className="text-[10px] font-bold bg-white text-slate-800 px-2.5 py-0.5 rounded-md border border-amber-200">
+                  Assigned: {booking.assignedCaregiverName}
+                </span>
+              )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="sm:col-span-2">
-                <label className="text-[11px] font-semibold text-slate-600 block mb-1">
-                  Recipient / Patient Full Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={patientName}
-                  onChange={(e) => setPatientName(e.target.value)}
-                  className="w-full text-xs p-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
-                />
+            {/* Check if replacement request is already pending */}
+            {booking.caregiverChangeRequest?.requested ? (
+              <div className="p-3 rounded-xl bg-white border border-amber-300 text-xs space-y-1.5">
+                <div className="flex items-center gap-2 text-amber-900 font-bold">
+                  <AlertCircle className="w-4 h-4 text-amber-600" />
+                  <span>Replacement Request Under Operations Review</span>
+                </div>
+                <p className="text-slate-700 text-xs">
+                  <strong>Reason given:</strong> &ldquo;{booking.caregiverChangeRequest.reason}&rdquo;
+                </p>
+                <span className="text-[10px] text-slate-500 block">
+                  Requested on {new Date(booking.caregiverChangeRequest.requestedAt).toLocaleString()} • Our Operations Admin is arranging a replacement caregiver.
+                </span>
               </div>
-
-              <div>
-                <label className="text-[11px] font-semibold text-slate-600 block mb-1">
-                  Age (Years)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  max="120"
-                  value={patientAge}
-                  onChange={(e) => setPatientAge(Number(e.target.value))}
-                  className="w-full text-xs p-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
-                />
+            ) : replacementFeedback ? (
+              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-300 text-xs text-emerald-900 font-semibold flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>{replacementFeedback}</span>
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            ) : (
               <div>
-                <label className="text-[11px] font-semibold text-slate-600 block mb-1">
-                  Gender
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {(['Male', 'Female'] as const).map((g) => (
+                {!showReplacementForm ? (
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <p className="text-xs text-amber-900">
+                      Need a different care worker due to patient preference, language communication, or schedule?
+                    </p>
                     <button
-                      key={g}
                       type="button"
-                      onClick={() => setPatientGender(g)}
-                      className={`py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                        patientGender === g
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
-                      }`}
+                      onClick={() => setShowReplacementForm(true)}
+                      className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer shrink-0"
                     >
-                      {g}
+                      <UserX className="w-3.5 h-3.5" />
+                      <span>Request Care Worker Change</span>
                     </button>
-                  ))}
+                  </div>
+                ) : (
+                  <form onSubmit={handleSubmitReplacementRequest} className="mt-2 space-y-3 p-3.5 rounded-xl bg-white border border-amber-200">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-amber-950">
+                        Care Worker Replacement Request Form:
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowReplacementForm(false)}
+                        className="text-xs text-slate-400 hover:text-slate-600 font-bold cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-800 block mb-1">
+                        Reason for Replacement Request (හේතුව සඳහන් කිරීම අනිවාර්යයි) *
+                      </label>
+                      <textarea
+                        required
+                        rows={3}
+                        minLength={5}
+                        value={replacementReason}
+                        onChange={(e) => setReplacementReason(e.target.value)}
+                        placeholder="කරුණාකර සේවකයා මාරු කිරීමට හේතුව මෙහි type කරන්න (උදා: රෝගියා ගැහැණු සාත්තු සේවිකාවකට කැමති වීම, භාෂා ගැටළුවක්, නියමිත වේලාවන් නොගැලපීම, විශේෂ කුසලතා අවශ්‍ය වීම)..."
+                        className="w-full text-xs p-2.5 rounded-xl border border-amber-300 bg-amber-50/20 text-slate-900 font-medium focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
+                      />
+                      <span className="text-[10px] text-slate-400 block mt-0.5">
+                        Minimum 5 characters. This reason is sent immediately to the Operations Admin.
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setShowReplacementForm(false)}
+                        className="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isSubmittingReplacement || !replacementReason.trim()}
+                        className="px-4 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        {isSubmittingReplacement ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <span>Submitting...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-3.5 h-3.5" />
+                            <span>Submit Replacement Request</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* SECTION 3: EDIT PATIENT & CONTACT DETAILS */}
+          <form onSubmit={handleSaveChanges} className="space-y-4">
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
+                <User className="w-4 h-4 text-blue-600" />
+                <span>Patient & Contact Information</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                    Patient Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={patientName}
+                    onChange={(e) => setPatientName(e.target.value)}
+                    className="w-full text-xs p-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                    Contact Phone Number *
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    value={contactPhone}
+                    onChange={(e) => setContactPhone(e.target.value)}
+                    placeholder="0771234567"
+                    className="w-full text-xs p-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                  />
                 </div>
               </div>
 
-              <div>
-                <label className="text-[11px] font-semibold text-slate-600 block mb-1">
-                  Mobility Level
-                </label>
-                <select
-                  value={mobilityLevel}
-                  onChange={(e) => setMobilityLevel(e.target.value as MobilityLevel)}
-                  className="w-full text-xs p-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
-                >
-                  <option value="independent">Fully Mobile / Independent / Child</option>
-                  <option value="partial">Partial Assistance Required</option>
-                  <option value="wheelchair">Wheelchair Bound</option>
-                  <option value="bedridden">Bedridden (High Clinical Need)</option>
-                </select>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                    City / Town
+                  </label>
+                  <input
+                    type="text"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="w-full text-xs p-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                    Medical Conditions / Emergency Notes
+                  </label>
+                  <input
+                    type="text"
+                    value={medicalConditions}
+                    onChange={(e) => setMedicalConditions(e.target.value)}
+                    placeholder="e.g. Hypertension, Diabetes, special diet..."
+                    className="w-full text-xs p-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                  />
+                </div>
               </div>
             </div>
 
-            <div>
-              <label className="text-[11px] font-semibold text-slate-600 block mb-1">
-                Medical Conditions / Routine Requirements
-              </label>
-              <textarea
-                rows={2}
-                value={medicalConditions}
-                onChange={(e) => setMedicalConditions(e.target.value)}
-                placeholder="e.g. Hypertension, Diabetes, post-surgery recovery, toddler feeding assistance, special diet..."
-                className="w-full text-xs p-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
-              />
-            </div>
-          </div>
-
-          {/* SECTION 4: LOCATION & FAMILY CONTACT */}
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
-              <MapPin className="w-4 h-4 text-blue-600" />
-              <span>Location & Family Contact Details</span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-[11px] font-semibold text-slate-600 block mb-1">
-                  District
-                </label>
-                <select
-                  value={district}
-                  onChange={(e) => setDistrict(e.target.value)}
-                  className="w-full text-xs p-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
-                >
-                  {districtList.map((d) => {
-                    const cleanName = d.split(' ')[0];
-                    return (
-                      <option key={d} value={cleanName}>
-                        {d}
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[11px] font-semibold text-slate-600 block mb-1">
-                  City / Town
-                </label>
-                <input
-                  type="text"
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  placeholder="e.g. Maharagama, Dehiwala"
-                  className="w-full text-xs p-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-[11px] font-semibold text-slate-600 block mb-1">
-                Detailed Residence Address & Directions
-              </label>
-              <input
-                type="text"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="No. 45/A, Temple Road, landmark near fuel station"
-                className="w-full text-xs p-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              <div>
-                <label className="text-[11px] font-semibold text-slate-600 block mb-1">
-                  Family / Contact Person Name
-                </label>
-                <input
-                  type="text"
-                  value={contactName}
-                  onChange={(e) => setContactName(e.target.value)}
-                  className="w-full text-xs p-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
-                />
-              </div>
-
-              <div>
-                <label className="text-[11px] font-semibold text-slate-600 block mb-1">
-                  Contact Phone Number *
-                </label>
-                <input
-                  type="tel"
-                  required
-                  value={contactPhone}
-                  onChange={(e) => setContactPhone(e.target.value)}
-                  placeholder="0771234567"
-                  className="w-full text-xs p-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* SECTION 5: VITALS CARE PLAN & BEDSIDE TASKS */}
-          <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-200/80 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
-                <Heart className="w-4 h-4 text-blue-600" />
-                <span>Vitals Monitoring & Bedside Routine Tasks</span>
-              </div>
+            {/* MODAL ACTIONS */}
+            <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
               <button
                 type="button"
-                onClick={handleResetToPackageDefaults}
-                className="text-[11px] font-bold text-blue-600 hover:underline cursor-pointer flex items-center gap-1"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="px-3.5 py-2 rounded-xl text-rose-600 hover:bg-rose-50 border border-rose-200 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
               >
-                <RefreshCw className="w-3 h-3" />
-                <span>Reset to {serviceName || 'Package'} Defaults</span>
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Cancel / Delete Booking</span>
               </button>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-[11px] font-semibold text-slate-700 block mb-1">
-                  BP & Pulse Monitoring Frequency
-                </label>
-                <select
-                  value={bpFrequency}
-                  onChange={(e) => setBpFrequency(e.target.value)}
-                  className="w-full text-xs p-2 rounded-xl bg-white border border-blue-200 text-slate-900 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
-                >
-                  <option value="none">Not Required / Child</option>
-                  <option value="1x_daily">Once Daily (Morning)</option>
-                  <option value="twice_daily">Twice Daily (Morning & Evening)</option>
-                  <option value="thrice_daily">Thrice Daily (TDS)</option>
-                  <option value="every_4_hours">Every 4 Hours (Critical / Post-Op)</option>
-                  <option value="as_needed">As Needed (PRN)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[11px] font-semibold text-slate-700 block mb-1">
-                  Blood Glucose (Sugar) Testing
-                </label>
-                <select
-                  value={sugarFrequency}
-                  onChange={(e) => setSugarFrequency(e.target.value)}
-                  className="w-full text-xs p-2 rounded-xl bg-white border border-blue-200 text-slate-900 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
-                >
-                  <option value="none">Not Required</option>
-                  <option value="morning_fasting">Morning Fasting (FBS)</option>
-                  <option value="pre_meals">Pre-Meals (AC)</option>
-                  <option value="post_prandial">Post-Prandial (PPBS)</option>
-                  <option value="twice_daily">Twice Daily (FBS + PPBS)</option>
-                  <option value="random">Random Blood Sugar Check</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              <label className="flex items-center gap-2 p-2.5 rounded-xl bg-white border border-blue-100 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={bedTurningRequired}
-                  onChange={(e) => setBedTurningRequired(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded-sm focus:ring-blue-500"
-                />
-                <span className="text-xs font-semibold text-slate-800">
-                  Strict 2-Hour Bed Repositioning
-                </span>
-              </label>
-
-              <label className="flex items-center gap-2 p-2.5 rounded-xl bg-white border border-blue-100 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={medicationReminders}
-                  onChange={(e) => setMedicationReminders(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded-sm focus:ring-blue-500"
-                />
-                <span className="text-xs font-semibold text-slate-800">
-                  Medication Reminders & Dispensing
-                </span>
-              </label>
-            </div>
-
-            <div>
-              <label className="text-[11px] font-semibold text-slate-700 block mb-1.5">
-                Active Bedside Routine Tasks:
-              </label>
-              <div className="flex flex-wrap gap-1.5">
-                {Array.from(new Set([...allStandardCareTasks, ...selectedCareTasks])).map((task) => {
-                  const isChecked = selectedCareTasks.includes(task);
-                  return (
-                    <button
-                      key={task}
-                      type="button"
-                      onClick={() => toggleTask(task)}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${
-                        isChecked
-                          ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
-                          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
-                      }`}
-                    >
-                      {task}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Add Custom Bedside Task */}
-            <div className="pt-2 border-t border-blue-100">
-              <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                + Add Custom Task (e.g. Toddler formula feeding, Nebulizer, Walker support):
-              </label>
               <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={customBedsideTaskInput}
-                  onChange={(e) => setCustomBedsideTaskInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddCustomTask();
-                    }
-                  }}
-                  placeholder="e.g. Baby formula feeding every 3 hours, Special low-salt meal, Walker assistance..."
-                  className="flex-1 px-3 py-1.5 rounded-xl border border-slate-300 text-xs bg-white text-slate-900 focus:outline-blue-600"
-                />
                 <button
                   type="button"
-                  onClick={handleAddCustomTask}
-                  className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all cursor-pointer shadow-2xs shrink-0 flex items-center gap-1"
+                  onClick={onClose}
+                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add</span>
+                  Close
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Saving Changes...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-3.5 h-3.5" />
+                      <span>Save Care Plan Duration</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
-          </div>
-
-          {/* MODAL ACTIONS */}
-          <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={() => setShowDeleteConfirm(true)}
-              className="px-3.5 py-2 rounded-xl text-rose-600 hover:bg-rose-50 border border-rose-200 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>Cancel / Delete Booking</span>
-            </button>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer disabled:opacity-50"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Saving Changes...</span>
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-3.5 h-3.5" />
-                    <span>Save Changes</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   );
