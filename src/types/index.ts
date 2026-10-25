@@ -233,13 +233,18 @@ export interface BookingSubmission {
 export interface GoogleReviewItem {
   id: string;
   authorName: string;
-  authorLocation: LocalizedString;
+  authorLocation?: string | LocalizedString;
   rating: number;
-  timeAgo: LocalizedString;
-  category: 'elderly_care' | 'child_care' | 'post_surgery' | 'live_in';
-  serviceUsed: LocalizedString;
+  timeAgo?: string | LocalizedString;
+  relativeTime?: string | LocalizedString;
+  category?: string;
+  serviceUsed?: string | LocalizedString;
   caregiverMentioned?: string;
-  text: LocalizedString;
-  verified: boolean;
+  text: string | LocalizedString;
+  verified?: boolean;
+  isVerified?: boolean;
+  isPublished?: boolean;
+  avatarUrl?: string;
+  createdAt?: string;
 }
 

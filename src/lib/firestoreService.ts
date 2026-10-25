@@ -12,7 +12,7 @@ import {
   updateDoc
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { BookingSubmission, EquipmentOrder, ServiceItem, ServiceTierOption } from '@/types';
+import { BookingSubmission, EquipmentOrder, ServiceItem, ServiceTierOption, GoogleReviewItem } from '@/types';
 
 // ======================== BOOKINGS ========================
 
@@ -437,5 +437,60 @@ export function subscribeToLiveServices(
     }
   );
 }
+
+// ======================== GOOGLE REVIEWS ========================
+
+/**
+ * Real-time listener for published Google Reviews from Firestore
+ */
+export function subscribeToLiveReviews(
+  onUpdate: (reviews: GoogleReviewItem[]) => void
+): () => void {
+  const q = query(collection(db, 'reviews'));
+  return onSnapshot(
+    q,
+    (snap) => {
+      if (snap.empty) {
+        onUpdate([]);
+        return;
+      }
+      const list: GoogleReviewItem[] = snap.docs.map((docSnap) => {
+        const d = docSnap.data();
+        return {
+          id: d.id || docSnap.id,
+          authorName: d.authorName || 'Google User',
+          authorLocation: d.authorLocation || '',
+          rating: typeof d.rating === 'number' ? d.rating : 5,
+          timeAgo: d.timeAgo || d.relativeTime || 'Recently',
+          relativeTime: d.relativeTime || d.timeAgo || 'Recently',
+          text: d.text || '',
+          category: d.category || 'elderly_care',
+          serviceUsed: d.serviceUsed || 'Care Service',
+          caregiverMentioned: d.caregiverMentioned,
+          verified: d.isVerified !== false && d.verified !== false,
+          isVerified: d.isVerified !== false && d.verified !== false,
+          isPublished: d.isPublished !== false,
+          avatarUrl: d.avatarUrl || '',
+          createdAt: d.createdAt
+        };
+      });
+
+      // Filter to only published reviews
+      const published = list.filter((r) => r.isPublished !== false);
+      // Sort newest first
+      published.sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
+
+      onUpdate(published);
+    },
+    (err) => {
+      console.warn('[Firestore] Error subscribing to live reviews:', err);
+    }
+  );
+}
+
 
 
