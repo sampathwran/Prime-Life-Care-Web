@@ -122,6 +122,12 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               {t.nav.track}
             </button>
+            <a
+              href="/#gallery"
+              className="hover:text-blue-600 transition-colors cursor-pointer text-xs sm:text-sm"
+            >
+              {language === 'si' ? 'ඡායාරූප' : language === 'ta' ? 'புகைப்படங்கள்' : 'Gallery'}
+            </a>
           </nav>
 
           {/* Right Actions: Book CTA in middle, Language Dropdown, Profile / Auth at the far right */}
@@ -338,6 +344,13 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               {t.nav.track}
             </button>
+            <a
+              href="/#gallery"
+              onClick={() => setMobileMenuOpen(false)}
+              className="text-left py-2 border-b border-slate-100"
+            >
+              {language === 'si' ? 'ඡායාරූප එකතුව (Gallery)' : language === 'ta' ? 'புகைப்படங்கள் (Gallery)' : 'Photo Gallery'}
+            </a>
             <a
               href={`tel:${t.emergencyPhone}`}
               className="flex items-center gap-2 text-blue-600 py-2 font-bold"

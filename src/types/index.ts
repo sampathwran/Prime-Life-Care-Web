@@ -248,3 +248,15 @@ export interface GoogleReviewItem {
   createdAt?: string;
 }
 
+export interface GalleryItem {
+  id: string;
+  title: string;
+  titleSi?: string;
+  imageUrl: string;
+  category: string;
+  description?: string;
+  isPublished: boolean;
+  sortOrder: number;
+  createdAt: string;
+}
+

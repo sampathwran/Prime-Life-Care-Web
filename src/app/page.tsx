@@ -7,6 +7,7 @@ import { Navbar } from '@/components/Navbar';
 import { Hero } from '@/components/Hero';
 import { TrustSection } from '@/components/TrustSection';
 import { ServicesSection } from '@/components/ServicesSection';
+import { GallerySection } from '@/components/GallerySection';
 import { ReviewsSection } from '@/components/ReviewsSection';
 import { BookingModal } from '@/components/BookingModal';
 import { BookingTracker } from '@/components/BookingTracker';
@@ -162,6 +163,9 @@ export default function Home() {
           services={services}
           onSelectServiceToBook={(svc, tierId) => handleOpenBooking(svc, tierId)}
         />
+
+        {/* Real-time Care Moments & Photo Gallery (Managed from Admin Panel) */}
+        <GallerySection />
 
         {/* Verified Google Reviews Section */}
         <ReviewsSection />

@@ -12,7 +12,7 @@ import {
   updateDoc
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { BookingSubmission, EquipmentOrder, ServiceItem, ServiceTierOption, GoogleReviewItem } from '@/types';
+import { BookingSubmission, EquipmentOrder, ServiceItem, ServiceTierOption, GoogleReviewItem, GalleryItem } from '@/types';
 
 // ======================== BOOKINGS ========================
 
@@ -488,6 +488,55 @@ export function subscribeToLiveReviews(
     },
     (err) => {
       console.warn('[Firestore] Error subscribing to live reviews:', err);
+    }
+  );
+}
+
+// ======================== PHOTO GALLERY ========================
+
+/**
+ * Subscribe to live published gallery items in Firestore 'gallery' collection
+ */
+export function subscribeToLiveGallery(onUpdate: (items: GalleryItem[]) => void): () => void {
+  const collRef = collection(db, 'gallery');
+  return onSnapshot(
+    collRef,
+    (snap) => {
+      if (snap.empty) {
+        onUpdate([]);
+        return;
+      }
+      const list: GalleryItem[] = snap.docs.map((docSnap) => {
+        const d = docSnap.data();
+        return {
+          id: d.id || docSnap.id,
+          title: d.title || 'Prime Life Care Moment',
+          titleSi: d.titleSi || '',
+          imageUrl: d.imageUrl || '',
+          category: d.category || 'General Care',
+          description: d.description || '',
+          isPublished: d.isPublished !== false,
+          sortOrder: typeof d.sortOrder === 'number' ? d.sortOrder : 0,
+          createdAt: d.createdAt || new Date().toISOString(),
+        };
+      });
+
+      // Filter only published items with valid imageUrl
+      const published = list.filter((item) => item.isPublished !== false && item.imageUrl);
+      // Sort by sortOrder ascending, then createdAt descending
+      published.sort((a, b) => {
+        if (a.sortOrder !== b.sortOrder) {
+          return a.sortOrder - b.sortOrder;
+        }
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
+
+      onUpdate(published);
+    },
+    (err) => {
+      console.warn('[Firestore] Error subscribing to live gallery:', err);
     }
   );
 }
