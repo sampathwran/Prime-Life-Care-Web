@@ -12,7 +12,7 @@ import {
   updateDoc
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { BookingSubmission, EquipmentOrder, ServiceItem, ServiceTierOption, GoogleReviewItem, GalleryItem, MedicalItem } from '@/types';
+import { BookingSubmission, EquipmentOrder, ServiceItem, ServiceTierOption, GoogleReviewItem, GalleryItem, MedicalItem, StoreCategory } from '@/types';
 import { initialMedicalItems } from '@/data/medicalItems';
 
 // ======================== BOOKINGS ========================
@@ -676,6 +676,42 @@ export async function findOrderByCode(queryCode: string): Promise<EquipmentOrder
     console.error('[Firestore] Error finding order:', err);
     return null;
   }
+}
+
+/**
+ * Real-time listener for store categories synced from Admin Panel
+ */
+export function subscribeToStoreCategories(
+  onUpdate: (categories: StoreCategory[]) => void
+): () => void {
+  const colRef = collection(db, 'store_categories');
+  return onSnapshot(
+    colRef,
+    (snapshot) => {
+      if (snapshot.empty) {
+        onUpdate([]);
+        return;
+      }
+      const list: StoreCategory[] = snapshot.docs.map((doc) => {
+        const d = doc.data();
+        return {
+          id: doc.id,
+          nameEn: d.nameEn || d.name || doc.id,
+          nameSi: d.nameSi || d.nameEn || d.name || doc.id,
+          icon: d.icon,
+          description: d.description,
+          isDefault: d.isDefault === true,
+          sortOrder: typeof d.sortOrder === 'number' ? d.sortOrder : 0,
+        };
+      });
+      list.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+      onUpdate(list);
+    },
+    (err) => {
+      console.warn('[Firestore] Error subscribing to store_categories:', err);
+      onUpdate([]);
+    }
+  );
 }
 
 

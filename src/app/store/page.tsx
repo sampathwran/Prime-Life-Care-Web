@@ -14,8 +14,8 @@ import { AuthModal } from '@/components/AuthModal';
 import { GoogleOneTapPrompt } from '@/components/GoogleOneTapPrompt';
 import { initialMedicalItems } from '@/data/medicalItems';
 import { initialServices } from '@/data/services';
-import { MedicalItem, BookingSubmission } from '@/types';
-import { subscribeToLiveProducts } from '@/lib/firestoreService';
+import { MedicalItem, BookingSubmission, StoreCategory } from '@/types';
+import { subscribeToLiveProducts, subscribeToStoreCategories } from '@/lib/firestoreService';
 import {
   ShoppingBag,
   Heart,
@@ -46,6 +46,7 @@ function StoreContent() {
 
   // Products State (Real-time Firestore sync)
   const [products, setProducts] = useState<MedicalItem[]>(initialMedicalItems);
+  const [categories, setCategories] = useState<StoreCategory[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -66,7 +67,15 @@ function StoreContent() {
         setProducts(liveItems);
       }
     });
-    return () => unsub();
+    const unsubCats = subscribeToStoreCategories((liveCats) => {
+      if (liveCats && liveCats.length > 0) {
+        setCategories(liveCats);
+      }
+    });
+    return () => {
+      unsub();
+      unsubCats();
+    };
   }, []);
 
   // Check query param `?item=id` to auto-open product modal
@@ -202,24 +211,43 @@ function StoreContent() {
 
             {/* Category Filter Pills */}
             <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
-              {[
-                { id: 'all', label: language === 'si' ? 'සියල්ල' : 'All Products' },
-                { id: 'equipment', label: language === 'si' ? 'රෝහල් ඇඳන් සහ මෙට්ට' : 'Hospital Beds & ICU' },
-                { id: 'mobility', label: language === 'si' ? 'රෝද පුටු' : 'Mobility Aids' },
-                { id: 'hygiene', label: language === 'si' ? 'සනීපාරක්ෂාව' : 'Hygiene & Diapers' },
-              ].map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => setSelectedCategory(cat.id)}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-                    selectedCategory === cat.id
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                  }`}
-                >
-                  {cat.label}
-                </button>
-              ))}
+              {(() => {
+                const defaultCategories: StoreCategory[] = [
+                  { id: 'equipment', nameEn: 'Hospital Beds & ICU', nameSi: 'රෝහල් ඇඳන් සහ මෙට්ට' },
+                  { id: 'mobility', nameEn: 'Mobility Aids', nameSi: 'රෝද පුටු' },
+                  { id: 'hygiene', nameEn: 'Hygiene & Diapers', nameSi: 'සනීපාරක්ෂාව' },
+                  { id: 'monitoring', nameEn: 'Vitals & Diagnostics', nameSi: 'පරීක්ෂක උපකරණ' },
+                ];
+                const activeCategories: StoreCategory[] = categories.length > 0 ? categories : defaultCategories;
+                const extraProductCategories = Array.from(new Set(products.map((p) => p.category)))
+                  .filter((catId) => catId && !activeCategories.some((c) => c.id === catId));
+
+                const allFilterCategories = [
+                  { id: 'all', label: language === 'si' ? 'සියල්ල' : 'All Products' },
+                  ...activeCategories.map((c) => ({
+                    id: c.id,
+                    label: language === 'si' && c.nameSi ? c.nameSi : c.nameEn,
+                  })),
+                  ...extraProductCategories.map((cId) => ({
+                    id: cId,
+                    label: cId.charAt(0).toUpperCase() + cId.slice(1).replace(/_/g, ' '),
+                  })),
+                ];
+
+                return allFilterCategories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setSelectedCategory(cat.id)}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                      selectedCategory === cat.id
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ));
+              })()}
             </div>
           </div>
         </div>

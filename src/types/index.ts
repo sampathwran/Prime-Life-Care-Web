@@ -78,6 +78,16 @@ export interface MedicalItem {
   createdAt?: string;
 }
 
+export interface StoreCategory {
+  id: string;
+  nameEn: string;
+  nameSi: string;
+  icon?: string;
+  description?: string;
+  isDefault?: boolean;
+  sortOrder?: number;
+}
+
 export interface CartItem {
   item: MedicalItem;
   quantity: number;
