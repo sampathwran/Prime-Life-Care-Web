@@ -270,6 +270,15 @@ export const CartDrawer: React.FC = () => {
                                     </span>
                                   )}
                                 </div>
+                                {item.stock === 0 ? (
+                                  <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-200 mt-1 inline-block">
+                                    ✕ {language === 'si' ? 'තොග අවසන්' : 'Out of Stock'}
+                                  </span>
+                                ) : item.stock <= 2 ? (
+                                  <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-300 mt-1 inline-block">
+                                    ⚠️ {language === 'si' ? `තොග සීමිතයි (${item.stock} ඉතිරියි)` : `Low Stock: Only ${item.stock} left`}
+                                  </span>
+                                ) : null}
                               </div>
 
                               {/* Quantity Stepper & Remove */}
@@ -285,7 +294,7 @@ export const CartDrawer: React.FC = () => {
                                     {quantity}
                                   </span>
                                   <button
-                                    onClick={() => updateQuantity(item.id, quantity + 1)}
+                                    onClick={() => updateQuantity(item.id, Math.min(item.stock ?? 999, quantity + 1))}
                                     className="p-1 px-2 hover:bg-slate-200 text-slate-600 cursor-pointer"
                                   >
                                     <Plus className="w-3 h-3" />
@@ -673,15 +682,31 @@ export const CartDrawer: React.FC = () => {
                 </div>
               </div>
 
-              <button
-                onClick={() => setStep('checkout')}
-                className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
-              >
-                <span>
-                  {language === 'si' ? 'මිලදී ගැනීමට යන්න (Proceed to Checkout)' : 'Proceed to Checkout'}
-                </span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
+              {cart.some((c) => c.item.stock === 0) ? (
+                <div className="space-y-2">
+                  <div className="p-2.5 rounded-xl bg-red-50 border border-red-200 text-center text-xs font-bold text-red-600">
+                    {language === 'si'
+                      ? 'කරුණාකර තොග අවසන් වූ භාණ්ඩ ඉවත් කර ඉදිරියට යන්න.'
+                      : 'Please remove out of stock item(s) before checkout.'}
+                  </div>
+                  <button
+                    disabled
+                    className="w-full py-3 rounded-xl bg-slate-300 text-slate-500 font-bold text-sm cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    <span>{language === 'si' ? 'මිලදී ගත නොහැක' : 'Cannot Checkout'}</span>
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setStep('checkout')}
+                  className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                >
+                  <span>
+                    {language === 'si' ? 'මිලදී ගැනීමට යන්න (Proceed to Checkout)' : 'Proceed to Checkout'}
+                  </span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              )}
             </div>
           )}
         </div>

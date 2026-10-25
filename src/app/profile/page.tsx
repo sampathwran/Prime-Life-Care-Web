@@ -2005,6 +2005,15 @@ export default function ProfilePage() {
                                       </span>
                                     )}
                                   </div>
+                                  {item.stock === 0 ? (
+                                    <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-200 mt-1 inline-block">
+                                      ✕ {language === 'si' ? 'තොග අවසන්' : 'Out of Stock'}
+                                    </span>
+                                  ) : item.stock <= 2 ? (
+                                    <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-300 mt-1 inline-block">
+                                      ⚠️ {language === 'si' ? `තොග සීමිතයි (${item.stock} ඉතිරියි)` : `Low Stock: Only ${item.stock} left`}
+                                    </span>
+                                  ) : null}
                                 </div>
                               </div>
 
@@ -2018,7 +2027,7 @@ export default function ProfilePage() {
                                   </button>
                                   <span className="px-3 text-xs font-bold text-slate-900">{quantity}</span>
                                   <button
-                                    onClick={() => updateQuantity(item.id, quantity + 1)}
+                                    onClick={() => updateQuantity(item.id, Math.min(item.stock ?? 999, quantity + 1))}
                                     className="p-1 px-2.5 hover:bg-slate-100 text-slate-600 cursor-pointer"
                                   >
                                     <Plus className="w-3 h-3" />
@@ -2051,19 +2060,35 @@ export default function ProfilePage() {
                           </span>
                         </div>
 
-                        <button
-                          onClick={() => {
-                            const event = new CustomEvent('open-cart-checkout');
-                            window.dispatchEvent(event);
-                            // Also open drawer
-                            const { openCartDrawer } = (window as any);
-                          }}
-                          className="px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
-                        >
-                          <ShoppingBag className="w-4 h-4" />
-                          <span>{language === 'si' ? 'ඇණවුම සම්පූර්ණ කරන්න (Checkout)' : 'Proceed to Checkout'}</span>
-                          <ArrowRight className="w-4 h-4" />
-                        </button>
+                        {cart.some((c) => c.item.stock === 0) ? (
+                          <div className="flex flex-col items-end gap-1.5">
+                            <span className="text-xs font-bold text-red-600 bg-red-50 px-3 py-1 rounded-xl border border-red-200">
+                              {language === 'si'
+                                ? 'තොග අවසන් වූ භාණ්ඩ කරත්තයෙන් ඉවත් කරන්න'
+                                : 'Remove out of stock items to checkout'}
+                            </span>
+                            <button
+                              disabled
+                              className="px-6 py-3 rounded-2xl bg-slate-200 text-slate-400 font-bold text-xs sm:text-sm cursor-not-allowed flex items-center justify-center gap-2"
+                            >
+                              <span>{language === 'si' ? 'මිලදී ගත නොහැක' : 'Cannot Checkout'}</span>
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              const event = new CustomEvent('open-cart-checkout');
+                              window.dispatchEvent(event);
+                              // Also open drawer
+                              const { openCartDrawer } = (window as any);
+                            }}
+                            className="px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                          >
+                            <ShoppingBag className="w-4 h-4" />
+                            <span>{language === 'si' ? 'ඇණවුම සම්පූර්ණ කරන්න (Checkout)' : 'Proceed to Checkout'}</span>
+                            <ArrowRight className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   )}

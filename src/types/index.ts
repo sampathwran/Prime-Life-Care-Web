@@ -67,7 +67,7 @@ export interface MedicalItem {
   salePriceLKR?: number;
   discountPercentage?: number;
   rentalMonthlyLKR?: number;
-  stock?: number;
+  stock: number;
   inStock: boolean;
   badge?: string;
   brand?: string;

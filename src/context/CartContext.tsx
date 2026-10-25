@@ -68,17 +68,23 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [saved, isLoaded]);
 
   const addToCart = (item: MedicalItem, quantity: number = 1) => {
+    if (typeof item.stock === 'number' && item.stock <= 0) {
+      alert('කරුණාකර සමාවන්න, මෙම භාණ්ඩයේ තොග අවසන් වී ඇත. (Sorry, this item is out of stock.)');
+      return;
+    }
     setCart((prev) => {
       const existingIdx = prev.findIndex((c) => c.item.id === item.id);
+      const maxStock = typeof item.stock === 'number' ? item.stock : 999;
       if (existingIdx !== -1) {
         const next = [...prev];
+        const newQty = next[existingIdx].quantity + quantity;
         next[existingIdx] = {
           ...next[existingIdx],
-          quantity: next[existingIdx].quantity + quantity
+          quantity: Math.min(newQty, maxStock)
         };
         return next;
       } else {
-        return [...prev, { item, quantity }];
+        return [...prev, { item, quantity: Math.min(quantity, maxStock) }];
       }
     });
     setIsCartDrawerOpen(true);

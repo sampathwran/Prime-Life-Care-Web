@@ -124,30 +124,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               {t.nav.track}
             </button>
-            <a
-              href="/#gallery"
-              className="hover:text-blue-600 transition-colors cursor-pointer text-xs sm:text-sm"
-            >
-              {language === 'si' ? 'ඡායාරූප' : language === 'ta' ? 'புகைப்படங்கள்' : 'Gallery'}
-            </a>
           </nav>
 
           {/* Right Actions: Book CTA in middle, Language Dropdown, Profile / Auth at the far right */}
           <div className="hidden sm:flex items-center gap-3">
-            {/* Shopping Cart Button */}
-            <button
-              onClick={openCartDrawer}
-              className="relative p-2.5 rounded-xl border border-slate-200 hover:border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-800 transition-all flex items-center justify-center cursor-pointer shadow-2xs"
-              title="Shopping Cart"
-            >
-              <ShoppingCart className="w-4 h-4 text-slate-700" />
-              {cartCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 rounded-full bg-blue-600 text-white text-[11px] font-black flex items-center justify-center shadow-xs">
-                  {cartCount}
-                </span>
-              )}
-            </button>
-
             {/* Book Now Button (In the Middle) */}
             <Link
               href="/booking"
@@ -279,20 +259,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             )}
 
-            {/* Mobile Cart Button */}
-            <button
-              onClick={openCartDrawer}
-              className="relative p-1.5 text-slate-700 hover:text-slate-900 rounded-lg hover:bg-slate-100 cursor-pointer"
-              title="Cart"
-            >
-              <ShoppingCart className="w-5 h-5" />
-              {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[17px] h-[17px] px-1 rounded-full bg-blue-600 text-white text-[10px] font-black flex items-center justify-center shadow-xs">
-                  {cartCount}
-                </span>
-              )}
-            </button>
-
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-1.5 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100"
@@ -325,31 +291,52 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {user && (
-            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                {user.photoURL ? (
-                  <img
-                    src={user.photoURL}
-                    alt={user.name}
-                    className="w-9 h-9 rounded-full object-cover border border-slate-300 shadow-2xs"
-                    referrerPolicy="no-referrer"
-                  />
-                ) : (
-                  <div className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold">
-                    {user.name.charAt(0)}
+            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  {user.photoURL ? (
+                    <img
+                      src={user.photoURL}
+                      alt={user.name}
+                      className="w-9 h-9 rounded-full object-cover border border-slate-300 shadow-2xs"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold">
+                      {user.name.charAt(0)}
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-xs font-bold text-slate-900">{user.name}</p>
+                    <p className="text-[11px] text-slate-500">{user.email}</p>
                   </div>
-                )}
-                <div>
-                  <p className="text-xs font-bold text-slate-900">{user.name}</p>
-                  <p className="text-[11px] text-slate-500">{user.email}</p>
                 </div>
+                <Link
+                  href="/profile"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-xs cursor-pointer"
+                >
+                  {t.nav.myProfile}
+                </Link>
               </div>
+
+              {/* My Cart Button inside Profile Section */}
               <Link
-                href="/profile"
+                href="/profile?tab=cart"
                 onClick={() => setMobileMenuOpen(false)}
-                className="px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-xs cursor-pointer"
+                className="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-800 hover:bg-blue-50 transition-colors"
               >
-                {t.nav.myProfile}
+                <div className="flex items-center gap-2">
+                  <ShoppingCart className="w-4 h-4 text-blue-600" />
+                  <span>{language === 'si' ? 'මගේ කරත්තය (My Cart)' : 'My Cart'}</span>
+                </div>
+                {cartCount > 0 ? (
+                  <span className="px-2 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-black">
+                    {cartCount} items
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-slate-400 font-normal">Empty</span>
+                )}
               </Link>
             </div>
           )}
@@ -374,13 +361,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               {t.nav.track}
             </button>
-            <a
-              href="/#gallery"
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-left py-2 border-b border-slate-100"
-            >
-              {language === 'si' ? 'ඡායාරූප එකතුව (Gallery)' : language === 'ta' ? 'புகைப்படங்கள் (Gallery)' : 'Photo Gallery'}
-            </a>
             <a
               href={`tel:${t.emergencyPhone}`}
               className="flex items-center gap-2 text-blue-600 py-2 font-bold"

@@ -284,6 +284,15 @@ function StoreContent() {
 
                     {/* Top Badges */}
                     <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+                      {product.stock === 0 ? (
+                        <span className="px-3 py-1 rounded-xl bg-red-600 text-white text-xs font-black shadow-md flex items-center gap-1">
+                          ✕ OUT OF STOCK
+                        </span>
+                      ) : product.stock <= 2 ? (
+                        <span className="px-3 py-1 rounded-xl bg-amber-500 text-white text-xs font-black shadow-md flex items-center gap-1">
+                          ⚠️ LOW STOCK ({product.stock})
+                        </span>
+                      ) : null}
                       {discount && discount > 0 ? (
                         <span className="px-3 py-1 rounded-xl bg-rose-600 text-white text-xs font-black shadow-md flex items-center gap-1">
                           <Sparkles className="w-3.5 h-3.5" />
@@ -337,9 +346,19 @@ function StoreContent() {
                         <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600">
                           {product.brand || 'Paramount Health'}
                         </span>
-                        <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                          ✓ {language === 'si' ? 'තොග ඇත' : 'In Stock'}
-                        </span>
+                        {product.stock === 0 ? (
+                          <span className="text-[11px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-md border border-red-200">
+                            ✕ {language === 'si' ? 'තොග අවසන්' : 'Out of Stock'}
+                          </span>
+                        ) : product.stock <= 2 ? (
+                          <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-300 flex items-center gap-1">
+                            ⚠️ {language === 'si' ? `තොග සීමිතයි (${product.stock})` : `Low Stock (${product.stock} Left)`}
+                          </span>
+                        ) : (
+                          <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                            ✓ {language === 'si' ? `තොග ඇත (${product.stock})` : `In Stock (${product.stock})`}
+                          </span>
+                        )}
                       </div>
 
                       <h3
@@ -386,22 +405,32 @@ function StoreContent() {
                           <span>{language === 'si' ? 'විස්තර සහ ඡායාරූප 5' : 'View 5 Photos'}</span>
                         </button>
 
-                        <button
-                          onClick={() => handleAddToCart(product, 1)}
-                          className="py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
-                        >
-                          {addedItemNotice === product.id ? (
-                            <>
-                              <Check className="w-3.5 h-3.5 text-emerald-300" />
-                              <span>{language === 'si' ? 'එක්විය!' : 'Added!'}</span>
-                            </>
-                          ) : (
-                            <>
-                              <ShoppingBag className="w-3.5 h-3.5" />
-                              <span>{language === 'si' ? 'කරත්තයට' : 'Add to Cart'}</span>
-                            </>
-                          )}
-                        </button>
+                        {product.stock === 0 ? (
+                          <button
+                            disabled
+                            className="py-2.5 px-3 rounded-xl bg-slate-100 text-slate-400 font-bold text-xs border border-slate-200 cursor-not-allowed flex items-center justify-center gap-1.5 opacity-75"
+                          >
+                            <ShoppingBag className="w-3.5 h-3.5 text-slate-400" />
+                            <span>{language === 'si' ? 'තොග අවසන්' : 'Out of Stock'}</span>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleAddToCart(product, 1)}
+                            className="py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                          >
+                            {addedItemNotice === product.id ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 text-emerald-300" />
+                                <span>{language === 'si' ? 'එක්විය!' : 'Added!'}</span>
+                              </>
+                            ) : (
+                              <>
+                                <ShoppingBag className="w-3.5 h-3.5" />
+                                <span>{language === 'si' ? 'කරත්තයට' : 'Add to Cart'}</span>
+                              </>
+                            )}
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -526,6 +555,26 @@ function StoreContent() {
               {/* Right: Info & Purchase Controls */}
               <div className="md:col-span-6 flex flex-col justify-between space-y-4">
                 <div className="space-y-2.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-bold text-blue-600 tracking-wide uppercase">
+                      {activeModalItem.brand || 'Paramount Health'}
+                    </span>
+                    <span className="text-slate-300">•</span>
+                    {activeModalItem.stock === 0 ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-red-600 bg-red-50 px-2.5 py-0.5 rounded-md border border-red-200">
+                        ✕ {language === 'si' ? 'තොග අවසන් (Out of Stock)' : 'Out of Stock'}
+                      </span>
+                    ) : activeModalItem.stock <= 2 ? (
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-md border border-amber-300">
+                        ⚠️ {language === 'si' ? `තොග සීමිතයි: ඉතිරිව ඇත්තේ ${activeModalItem.stock} පමණි!` : `Low Stock: Only ${activeModalItem.stock} left!`}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-200">
+                        ✓ {language === 'si' ? `තොග ඇත (${activeModalItem.stock} Units In Stock)` : `In Stock (${activeModalItem.stock} Units)`}
+                      </span>
+                    )}
+                  </div>
+
                   <h2 className="text-lg sm:text-xl font-black text-slate-900 leading-snug">
                     {language === 'si' && activeModalItem.name.si
                       ? activeModalItem.name.si
@@ -581,46 +630,65 @@ function StoreContent() {
 
                 {/* Quantity & CTA Buttons */}
                 <div className="space-y-3 pt-3 border-t border-slate-100">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700">
-                      {language === 'si' ? 'ප්‍රමාණය (Quantity):' : 'Quantity:'}
-                    </span>
-                    <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
+                  {activeModalItem.stock === 0 ? (
+                    <div className="space-y-2.5">
+                      <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-center text-xs font-bold text-red-700">
+                        {language === 'si'
+                          ? 'කරුණාකර සමාවන්න, මෙම භාණ්ඩයේ සියලු තොග අවසන් වී ඇත.'
+                          : 'Sorry, this product is currently out of stock.'}
+                      </div>
                       <button
-                        onClick={() => setModalQuantity((prev) => Math.max(1, prev - 1))}
-                        className="p-1.5 px-3 hover:bg-slate-200 text-slate-600 cursor-pointer"
+                        disabled
+                        className="w-full py-3 px-4 rounded-xl bg-slate-200 text-slate-500 font-bold text-xs sm:text-sm cursor-not-allowed flex items-center justify-center gap-2"
                       >
-                        <Minus className="w-3.5 h-3.5" />
-                      </button>
-                      <span className="px-3 text-xs font-bold text-slate-900">
-                        {modalQuantity}
-                      </span>
-                      <button
-                        onClick={() => setModalQuantity((prev) => prev + 1)}
-                        className="p-1.5 px-3 hover:bg-slate-200 text-slate-600 cursor-pointer"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
+                        <ShoppingBag className="w-4 h-4 text-slate-400" />
+                        <span>{language === 'si' ? 'තොග අවසන් (Out of Stock)' : 'Out of Stock'}</span>
                       </button>
                     </div>
-                  </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-700">
+                          {language === 'si' ? 'ප්‍රමාණය (Quantity):' : 'Quantity:'}
+                        </span>
+                        <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
+                          <button
+                            onClick={() => setModalQuantity((prev) => Math.max(1, prev - 1))}
+                            className="p-1.5 px-3 hover:bg-slate-200 text-slate-600 cursor-pointer"
+                          >
+                            <Minus className="w-3.5 h-3.5" />
+                          </button>
+                          <span className="px-3 text-xs font-bold text-slate-900">
+                            {modalQuantity}
+                          </span>
+                          <button
+                            onClick={() => setModalQuantity((prev) => Math.min(activeModalItem.stock, prev + 1))}
+                            className="p-1.5 px-3 hover:bg-slate-200 text-slate-600 cursor-pointer"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
 
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleAddToCart(activeModalItem, modalQuantity)}
-                      className="flex-1 py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
-                    >
-                      <ShoppingBag className="w-4 h-4 text-blue-400" />
-                      <span>{language === 'si' ? 'කරත්තයට එක්කරන්න' : 'Add to Cart'}</span>
-                    </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleAddToCart(activeModalItem, modalQuantity)}
+                          className="flex-1 py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                        >
+                          <ShoppingBag className="w-4 h-4 text-blue-400" />
+                          <span>{language === 'si' ? 'කරත්තයට එක්කරන්න' : 'Add to Cart'}</span>
+                        </button>
 
-                    <button
-                      onClick={() => handleBuyNow(activeModalItem)}
-                      className="flex-1 py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
-                    >
-                      <span>{language === 'si' ? 'දැන්ම මිලදී ගන්න' : 'Buy Now'}</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
-                  </div>
+                        <button
+                          onClick={() => handleBuyNow(activeModalItem)}
+                          className="flex-1 py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                        >
+                          <span>{language === 'si' ? 'දැන්ම මිලදී ගන්න' : 'Buy Now'}</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

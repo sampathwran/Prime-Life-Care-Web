@@ -247,6 +247,29 @@ export async function saveOrderToFirestore(order: EquipmentOrder): Promise<void>
     };
     await setDoc(docRef, orderData, { merge: true });
     console.log('[Firestore] Order saved successfully:', order.orderCode);
+
+    // Deduct ordered quantity from inventory stock in Firestore 'medical_items'
+    for (const it of order.items) {
+      if (!it.itemId) continue;
+      try {
+        const itemRef = doc(db, 'medical_items', it.itemId);
+        const itemSnap = await getDoc(itemRef);
+        if (itemSnap.exists()) {
+          const itemData = itemSnap.data();
+          const currentStock = typeof itemData.stock === 'number' ? itemData.stock : 1;
+          const orderQty = it.quantity || 1;
+          const newStock = Math.max(0, currentStock - orderQty);
+          await updateDoc(itemRef, {
+            stock: newStock,
+            inStock: newStock > 0,
+            updatedAt: new Date().toISOString()
+          });
+          console.log(`[Firestore] Deducted stock for ${it.itemId}: ${currentStock} -> ${newStock}`);
+        }
+      } catch (stockErr) {
+        console.warn(`[Firestore] Could not deduct stock for item ${it.itemId}:`, stockErr);
+      }
+    }
   } catch (error) {
     console.error('[Firestore] Error saving order:', error);
     throw error;

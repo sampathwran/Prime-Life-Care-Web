@@ -185,10 +185,26 @@ export const HomeStoreShowcase: React.FC = () => {
                   {currentProduct.brand || 'Paramount Health'}
                 </span>
                 <span className="text-slate-600">•</span>
-                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  {language === 'si' ? 'තොග ඇත (In Stock)' : 'In Stock • Ready to Deliver'}
-                </span>
+                {currentProduct.stock === 0 ? (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-red-400 bg-red-500/15 px-2.5 py-0.5 rounded-md border border-red-500/30">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                    {language === 'si' ? 'තොග අවසන් (Out of Stock)' : 'Out of Stock'}
+                  </span>
+                ) : currentProduct.stock <= 2 ? (
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-amber-300 bg-amber-500/20 px-2.5 py-0.5 rounded-md border border-amber-500/40">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                    {language === 'si'
+                      ? `⚠️ තොග සීමිතයි: ඉතිරිව ඇත්තේ ${currentProduct.stock} පමණි!`
+                      : `⚠️ Low Stock: Only ${currentProduct.stock} left!`}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    {language === 'si'
+                      ? `තොග ඇත (${currentProduct.stock} ක් ඇත)`
+                      : `In Stock • ${currentProduct.stock} Available`}
+                  </span>
+                )}
               </div>
 
               {/* Title */}
@@ -237,24 +253,36 @@ export const HomeStoreShowcase: React.FC = () => {
 
               {/* Action Buttons: Add to Cart & View 5 Photos in Store */}
               <div className="flex flex-wrap items-center gap-3 pt-1">
-                <button
-                  onClick={(e) => handleAddToCart(e, currentProduct)}
-                  className="flex-1 py-3 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
-                >
-                  {addedItemNotice === currentProduct.id ? (
-                    <>
-                      <Check className="w-4 h-4 text-emerald-300" />
-                      <span>{language === 'si' ? 'කරත්තයට එක්විය!' : 'Added to Cart!'}</span>
-                    </>
-                  ) : (
-                    <>
-                      <ShoppingBag className="w-4 h-4" />
-                      <span>
-                        {language === 'si' ? 'කරත්තයට එක්කරන්න (Add to Cart)' : 'Add to Cart'}
-                      </span>
-                    </>
-                  )}
-                </button>
+                {currentProduct.stock === 0 ? (
+                  <button
+                    disabled
+                    className="flex-1 py-3 px-5 rounded-xl bg-slate-800 text-slate-400 font-bold text-xs sm:text-sm border border-slate-700/80 flex items-center justify-center gap-2 cursor-not-allowed opacity-80"
+                  >
+                    <ShoppingBag className="w-4 h-4 text-slate-500" />
+                    <span>
+                      {language === 'si' ? 'තොග අවසන් (Out of Stock)' : 'Out of Stock'}
+                    </span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={(e) => handleAddToCart(e, currentProduct)}
+                    className="flex-1 py-3 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                  >
+                    {addedItemNotice === currentProduct.id ? (
+                      <>
+                        <Check className="w-4 h-4 text-emerald-300" />
+                        <span>{language === 'si' ? 'කරත්තයට එක්විය!' : 'Added to Cart!'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingBag className="w-4 h-4" />
+                        <span>
+                          {language === 'si' ? 'කරත්තයට එක්කරන්න (Add to Cart)' : 'Add to Cart'}
+                        </span>
+                      </>
+                    )}
+                  </button>
+                )}
 
                 <Link
                   href={`/store?item=${currentProduct.id}`}
