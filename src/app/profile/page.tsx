@@ -5,18 +5,21 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth, defaultDemoUser } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { useCart } from '@/context/CartContext';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { AuthModal } from '@/components/AuthModal';
 import { BookingModal } from '@/components/BookingModal';
 import { EditBookingModal } from '@/components/EditBookingModal';
-import { BookingSubmission, EquipmentOrder, PaymentRecord, SavedPatient } from '@/types';
+import { CartDrawer } from '@/components/CartDrawer';
+import { BookingSubmission, EquipmentOrder, PaymentRecord, SavedPatient, MedicalItem } from '@/types';
 import { districtList } from '@/data/services';
 import {
   fetchUserBookingsFromFirestore,
   fetchUserOrdersFromFirestore,
   subscribeToUserBookings,
-  subscribeToUserOrders
+  subscribeToUserOrders,
+  saveOrderToFirestore
 } from '@/lib/firestoreService';
 import {
   User,
@@ -24,6 +27,7 @@ import {
   Calendar,
   CreditCard,
   ShoppingBag,
+  ShoppingCart,
   Phone,
   MapPin,
   LogOut,
@@ -38,6 +42,7 @@ import {
   Edit3,
   Save,
   Plus,
+  Minus,
   Trash2,
   Heart,
   Shield,
@@ -45,6 +50,7 @@ import {
   Stethoscope,
   ChevronRight,
   ArrowLeft,
+  ArrowRight,
   PhoneCall,
   Check,
   ExternalLink,
@@ -67,12 +73,39 @@ export default function ProfilePage() {
     loginAsDemoUser
   } = useAuth();
   const { language } = useLanguage();
+  const {
+    cart,
+    saved,
+    removeFromCart,
+    updateQuantity,
+    clearCart,
+    addToCart,
+    toggleSaveItem,
+    cartTotal,
+    cartRegularTotal,
+    cartSavings,
+    cartCount
+  } = useCart();
   const router = useRouter();
 
-  // Active Tab: details | bookings | family | orders | payments | notifications | emergency
+  // Active Tab: details | bookings | family | orders | cart | saved | payments | notifications | emergency
   const [activeTab, setActiveTab] = useState<
-    'details' | 'bookings' | 'family' | 'orders' | 'payments' | 'notifications' | 'emergency'
+    'details' | 'bookings' | 'family' | 'orders' | 'cart' | 'saved' | 'payments' | 'notifications' | 'emergency'
   >('bookings');
+
+  // Check URL query param `?tab=cart` or `?tab=orders`
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (
+        tabParam &&
+        ['details', 'bookings', 'family', 'orders', 'cart', 'saved', 'payments', 'notifications', 'emergency'].includes(tabParam)
+      ) {
+        setActiveTab(tabParam as any);
+      }
+    }
+  }, []);
 
   // Bookings Filter: all | active | completed
   const [bookingFilter, setBookingFilter] = useState<'all' | 'active' | 'completed'>('all');
@@ -943,6 +976,48 @@ export default function ProfilePage() {
                   </span>
                 </button>
 
+                {/* 5. My Cart */}
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('cart')}
+                  className={`w-full p-3 rounded-2xl font-bold text-xs sm:text-sm transition-all flex items-center justify-between cursor-pointer ${
+                    activeTab === 'cart'
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                      : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <ShoppingCart className="w-4 h-4" />
+                    <span>{language === 'si' ? 'මගේ කරත්තය (Cart)' : 'My Cart'}</span>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                    activeTab === 'cart' ? 'bg-blue-800 text-white' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {cartCount}
+                  </span>
+                </button>
+
+                {/* 6. Saved Wishlist Items */}
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('saved')}
+                  className={`w-full p-3 rounded-2xl font-bold text-xs sm:text-sm transition-all flex items-center justify-between cursor-pointer ${
+                    activeTab === 'saved'
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                      : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Heart className="w-4 h-4" />
+                    <span>{language === 'si' ? 'සුරැකි භාණ්ඩ (Wishlist)' : 'Saved Items'}</span>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                    activeTab === 'saved' ? 'bg-blue-800 text-white' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {saved.length}
+                  </span>
+                </button>
+
                 {/* 5. Payments & Invoices */}
                 <button
                   type="button"
@@ -1745,7 +1820,7 @@ export default function ProfilePage() {
                 </div>
               )}
 
-              {/* TAB 4: MEDICAL EQUIPMENT ORDERS */}
+              {/* TAB 4: MEDICAL EQUIPMENT ORDERS WITH LIVE TRACKING */}
               {activeTab === 'orders' && (
                 <div className="space-y-6">
                   <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs flex items-center justify-between">
@@ -1756,7 +1831,7 @@ export default function ProfilePage() {
 
                     <Link
                       href="/store"
-                      className="px-4 py-2 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
+                      className="px-4 py-2 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
                     >
                       <ShoppingBag className="w-4 h-4" />
                       <span>{t.goToStoreBtn}</span>
@@ -1770,46 +1845,321 @@ export default function ProfilePage() {
                       <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
                         {t.noOrdersSub}
                       </p>
+                      <Link
+                        href="/store"
+                        className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-all shadow-xs"
+                      >
+                        <ShoppingBag className="w-4 h-4" />
+                        <span>{t.goToStoreBtn}</span>
+                      </Link>
                     </div>
                   ) : (
-                    orders.map((ord) => (
-                      <div
-                        key={ord.id}
-                        className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4"
-                      >
-                        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                          <div className="flex items-center gap-2.5">
-                            <span className="font-black text-slate-900 text-base">{ord.orderCode}</span>
-                            <span className="text-xs text-slate-400">{ord.createdAt}</span>
-                          </div>
-                          <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 flex items-center gap-1.5 border border-blue-100">
-                            <Truck className="w-3.5 h-3.5" />
-                            <span>{ord.status.toUpperCase()}</span>
-                          </span>
-                        </div>
+                    orders.map((ord) => {
+                      const st = (ord.orderStatus || ord.status || 'pending').toLowerCase();
+                      const stepIdx = st === 'delivered' ? 4 : st === 'dispatched' ? 3 : st === 'confirmed' || st === 'processing' ? 2 : 1;
 
-                        <div className="space-y-2 text-xs">
-                          {ord.items.map((it, idx) => (
-                            <div key={idx} className="flex justify-between p-3 rounded-xl bg-slate-50">
-                              <span className="font-bold text-slate-900">{it.quantity}x {it.name}</span>
-                              <span className="font-extrabold text-blue-700">LKR {(it.priceLKR * it.quantity).toLocaleString()}</span>
+                      return (
+                        <div
+                          key={ord.id}
+                          className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4"
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                            <div className="flex items-center gap-2.5">
+                              <span className="font-mono font-black text-slate-900 text-base">{ord.orderCode}</span>
+                              <span className="text-xs text-slate-400">
+                                {new Date(ord.createdAt).toLocaleDateString()}
+                              </span>
                             </div>
-                          ))}
-                        </div>
+                            <div className="flex items-center gap-2">
+                              <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 border ${
+                                st === 'delivered'
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                  : st === 'dispatched'
+                                  ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                  : 'bg-amber-50 text-amber-800 border-amber-200'
+                              }`}>
+                                <Truck className="w-3.5 h-3.5" />
+                                <span className="uppercase font-bold">{st.replace('_', ' ')}</span>
+                              </span>
+                              <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 uppercase">
+                                {ord.paymentMethod === 'cod' ? 'COD' : 'Bank Transfer'}
+                              </span>
+                            </div>
+                          </div>
 
-                        <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs text-slate-500">
-                          <span>{t.deliveryAddressLabel} <strong className="text-slate-800">{ord.deliveryAddress}</strong></span>
-                          <span className="font-black text-blue-700 text-base">
-                            {t.totalAmountLabel} LKR {ord.totalAmountLKR.toLocaleString()}
-                          </span>
+                          {/* Live Tracking 4-Step Visual Stepper */}
+                          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
+                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
+                              Live Order Tracking Progress:
+                            </span>
+                            <div className="grid grid-cols-4 gap-2 text-center">
+                              {[
+                                { step: 1, label: 'Order Received' },
+                                { step: 2, label: 'Confirmed' },
+                                { step: 3, label: 'Dispatched' },
+                                { step: 4, label: 'Delivered' },
+                              ].map((s) => (
+                                <div key={s.step} className="space-y-1">
+                                  <div className={`h-1.5 rounded-full ${stepIdx >= s.step ? 'bg-blue-600' : 'bg-slate-200'}`} />
+                                  <span className={`text-[10px] font-bold block ${stepIdx >= s.step ? 'text-blue-700' : 'text-slate-400'}`}>
+                                    {s.label}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="space-y-2 text-xs">
+                            {ord.items.map((it, idx) => (
+                              <div key={idx} className="flex justify-between items-center p-3 rounded-xl bg-slate-50/80">
+                                <span className="font-bold text-slate-900">{it.quantity}x {it.name}</span>
+                                <span className="font-black text-blue-700">LKR {(it.priceLKR * it.quantity).toLocaleString()}</span>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-2">
+                            <span>{t.deliveryAddressLabel} <strong className="text-slate-800">{ord.deliveryAddress}</strong> ({ord.district})</span>
+                            <span className="font-black text-blue-700 text-base">
+                              {t.totalAmountLabel} LKR {ord.totalAmountLKR.toLocaleString()}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               )}
 
-              {/* TAB 5: INVOICES & PAYMENTS */}
+              {/* TAB 5: MY CART & EXPRESS CHECKOUT */}
+              {activeTab === 'cart' && (
+                <div className="space-y-6">
+                  <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs flex items-center justify-between">
+                    <div>
+                      <h2 className="text-lg font-black text-slate-900">
+                        {language === 'si' ? 'මගේ කරත්තය (Shopping Cart)' : 'My Shopping Cart'}
+                      </h2>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {cartCount} {cartCount === 1 ? 'item' : 'items'} in your cart
+                      </p>
+                    </div>
+
+                    <Link
+                      href="/store"
+                      className="px-4 py-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all flex items-center gap-1.5"
+                    >
+                      <Plus className="w-4 h-4 text-blue-600" />
+                      <span>{language === 'si' ? 'භාණ්ඩ එක්කරන්න' : 'Add More Products'}</span>
+                    </Link>
+                  </div>
+
+                  {cart.length === 0 ? (
+                    <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-xs">
+                      <ShoppingCart className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                      <h4 className="text-base font-bold text-slate-800">
+                        {language === 'si' ? 'ඔබගේ කරත්තය හිස්ය' : 'Your Shopping Cart is Empty'}
+                      </h4>
+                      <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+                        {language === 'si'
+                          ? 'වෛද්‍ය උපකරණ ගවේෂණය කර කරත්තයට එක්කරන්න.'
+                          : 'Explore hospital beds, wheelchairs, and recovery supplies in our store.'}
+                      </p>
+                      <Link
+                        href="/store"
+                        className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-all shadow-xs"
+                      >
+                        <ShoppingBag className="w-4 h-4" />
+                        <span>{language === 'si' ? 'වෙළඳසැලට යන්න' : 'Browse Medical Store'}</span>
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-5">
+                      <div className="space-y-3">
+                        {cart.map((cartItem) => {
+                          const { item, quantity } = cartItem;
+                          const title = language === 'si' && item.name.si ? item.name.si : item.name.en;
+                          const price = item.salePriceLKR || item.priceLKR;
+                          const regular = item.regularPriceLKR;
+
+                          return (
+                            <div
+                              key={item.id}
+                              className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                            >
+                              <div className="flex items-center gap-3.5">
+                                <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-900 shrink-0 border border-slate-200 relative">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src={item.images[0]} alt={title} className="w-full h-full object-cover" />
+                                </div>
+                                <div>
+                                  <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug line-clamp-1">
+                                    {title}
+                                  </h4>
+                                  <div className="flex items-baseline gap-2 mt-0.5">
+                                    <span className="text-sm font-black text-blue-600">
+                                      LKR {price.toLocaleString()}
+                                    </span>
+                                    {regular && regular > price && (
+                                      <span className="text-xs text-slate-400 line-through">
+                                        LKR {regular.toLocaleString()}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-between sm:justify-end gap-4">
+                                <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden bg-white">
+                                  <button
+                                    onClick={() => updateQuantity(item.id, quantity - 1)}
+                                    className="p-1 px-2.5 hover:bg-slate-100 text-slate-600 cursor-pointer"
+                                  >
+                                    <Minus className="w-3 h-3" />
+                                  </button>
+                                  <span className="px-3 text-xs font-bold text-slate-900">{quantity}</span>
+                                  <button
+                                    onClick={() => updateQuantity(item.id, quantity + 1)}
+                                    className="p-1 px-2.5 hover:bg-slate-100 text-slate-600 cursor-pointer"
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                  </button>
+                                </div>
+
+                                <span className="text-sm font-black text-slate-900">
+                                  LKR {(price * quantity).toLocaleString()}
+                                </span>
+
+                                <button
+                                  onClick={() => removeFromCart(item.id)}
+                                  className="p-2 text-slate-400 hover:text-rose-600 rounded-xl hover:bg-rose-50 transition-colors cursor-pointer"
+                                  title="Remove item"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Total and Checkout Action */}
+                      <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                          <span className="text-xs text-slate-500 block">Total Amount to Pay:</span>
+                          <span className="text-2xl font-black text-blue-600">
+                            LKR {cartTotal.toLocaleString()}
+                          </span>
+                        </div>
+
+                        <button
+                          onClick={() => {
+                            const event = new CustomEvent('open-cart-checkout');
+                            window.dispatchEvent(event);
+                            // Also open drawer
+                            const { openCartDrawer } = (window as any);
+                          }}
+                          className="px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                        >
+                          <ShoppingBag className="w-4 h-4" />
+                          <span>{language === 'si' ? 'ඇණවුම සම්පූර්ණ කරන්න (Checkout)' : 'Proceed to Checkout'}</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 6: SAVED WISHLIST ITEMS */}
+              {activeTab === 'saved' && (
+                <div className="space-y-6">
+                  <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs flex items-center justify-between">
+                    <div>
+                      <h2 className="text-lg font-black text-slate-900">
+                        {language === 'si' ? 'සුරැකි භාණ්ඩ (Saved Wishlist)' : 'Saved Wishlist Items'}
+                      </h2>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {saved.length} {saved.length === 1 ? 'item' : 'items'} saved for later
+                      </p>
+                    </div>
+
+                    <Link
+                      href="/store"
+                      className="px-4 py-2 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
+                    >
+                      <ShoppingBag className="w-4 h-4" />
+                      <span>{t.goToStoreBtn}</span>
+                    </Link>
+                  </div>
+
+                  {saved.length === 0 ? (
+                    <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-xs">
+                      <Heart className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                      <h4 className="text-base font-bold text-slate-800">
+                        {language === 'si' ? 'සුරැකි භාණ්ඩ කිසිවක් නැත' : 'No Saved Items in Wishlist'}
+                      </h4>
+                      <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+                        {language === 'si'
+                          ? 'වෙළඳසැලේ ඇති Heart ලකුණ ක්ලික් කර භාණ්ඩ මෙහි සුරැකිය හැක.'
+                          : 'Click the heart icon on any medical product to save it here for later.'}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      {saved.map((savedItem) => {
+                        const { item } = savedItem;
+                        const title = language === 'si' && item.name.si ? item.name.si : item.name.en;
+                        const price = item.salePriceLKR || item.priceLKR;
+
+                        return (
+                          <div
+                            key={item.id}
+                            className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs space-y-3 flex flex-col justify-between"
+                          >
+                            <div className="flex gap-3">
+                              <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-900 shrink-0 border border-slate-200">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={item.images[0]} alt={title} className="w-full h-full object-cover" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="text-xs sm:text-sm font-bold text-slate-900 line-clamp-2 leading-snug">
+                                  {title}
+                                </h4>
+                                <span className="text-sm font-black text-blue-600 block mt-1">
+                                  LKR {price.toLocaleString()}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                              <button
+                                onClick={() => {
+                                  addToCart(item, 1);
+                                  toggleSaveItem(item);
+                                }}
+                                className="flex-1 py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                              >
+                                <ShoppingCart className="w-3.5 h-3.5" />
+                                <span>{language === 'si' ? 'කරත්තයට එක්කරන්න' : 'Move to Cart'}</span>
+                              </button>
+
+                              <button
+                                onClick={() => toggleSaveItem(item)}
+                                className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                                title="Remove from wishlist"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 7: INVOICES & PAYMENTS */}
               {activeTab === 'payments' && (
                 <div className="space-y-6">
                   <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs">
@@ -2069,6 +2419,9 @@ export default function ProfilePage() {
 
       {/* Global Auth Modal */}
       <AuthModal />
+
+      {/* Slide-over Cart & Checkout Drawer */}
+      <CartDrawer />
 
       {/* Footer */}
       <Footer />

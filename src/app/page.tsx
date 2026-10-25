@@ -5,12 +5,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/Navbar';
 import { Hero } from '@/components/Hero';
+import { HomeStoreShowcase } from '@/components/HomeStoreShowcase';
 import { TrustSection } from '@/components/TrustSection';
 import { ServicesSection } from '@/components/ServicesSection';
 import { GallerySection } from '@/components/GallerySection';
 import { ReviewsSection } from '@/components/ReviewsSection';
 import { BookingModal } from '@/components/BookingModal';
 import { BookingTracker } from '@/components/BookingTracker';
+import { CartDrawer } from '@/components/CartDrawer';
 import { AuthModal } from '@/components/AuthModal';
 import { GoogleOneTapPrompt } from '@/components/GoogleOneTapPrompt';
 import { Footer } from '@/components/Footer';
@@ -155,6 +157,9 @@ export default function Home() {
           onExploreServices={() => scrollToSection('services')}
         />
 
+        {/* Sliding Medical Store Products Showcase (Placed directly below Hero as requested) */}
+        <HomeStoreShowcase />
+
         {/* Why Choose Us with nursing vitals photo */}
         <TrustSection />
 
@@ -169,74 +174,6 @@ export default function Home() {
 
         {/* Verified Google Reviews Section */}
         <ReviewsSection />
-
-        {/* Dedicated Medical Equipment Store Showcase Banner linking to /store - 100% Pure Localized */}
-        <section className="py-12 bg-slate-50 border-t border-slate-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 text-white rounded-3xl p-6 sm:p-10 shadow-xl overflow-hidden relative border border-slate-800">
-              <div className="grid lg:grid-cols-12 gap-8 items-center">
-                <div className="lg:col-span-7 space-y-4">
-                  <span className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-bold uppercase tracking-wider border border-blue-400/30">
-                    {t.storeBanner.tag}
-                  </span>
-                  <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-                    {t.storeBanner.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
-                    {t.storeBanner.description}
-                  </p>
-
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    <span className="px-3 py-1 rounded-lg bg-white/10 text-slate-200 text-xs font-semibold backdrop-blur-xs border border-white/10">
-                      {t.storeBanner.badgeBeds}
-                    </span>
-                    <span className="px-3 py-1 rounded-lg bg-white/10 text-slate-200 text-xs font-semibold backdrop-blur-xs border border-white/10">
-                      {t.storeBanner.badgeMattress}
-                    </span>
-                    <span className="px-3 py-1 rounded-lg bg-white/10 text-slate-200 text-xs font-semibold backdrop-blur-xs border border-white/10">
-                      {t.storeBanner.badgeWheelchairs}
-                    </span>
-                    <span className="px-3 py-1 rounded-lg bg-white/10 text-slate-200 text-xs font-semibold backdrop-blur-xs border border-white/10">
-                      {t.storeBanner.badgeDiapers}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-4 pt-3">
-                    <Link
-                      href="/store"
-                      className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md transition-all flex items-center gap-2 cursor-pointer active:scale-95"
-                    >
-                      <ShoppingBag className="w-4 h-4 text-white" />
-                      <span>{t.storeBanner.visitBtn}</span>
-                      <ArrowRight className="w-4 h-4 text-white" />
-                    </Link>
-
-                    <div className="text-xs text-slate-300 flex items-center gap-2 bg-slate-800/80 px-3 py-2 rounded-xl border border-slate-700">
-                      <Truck className="w-4 h-4 text-blue-400 shrink-0" />
-                      <span>{t.storeBanner.deliveryBadge}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="lg:col-span-5">
-                  <div className="rounded-2xl overflow-hidden shadow-xl border-2 border-white/10 aspect-4/3 relative group">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src="/images/medical_store.jpg"
-                      alt="Medical Supplies Showroom"
-                      className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent pointer-events-none" />
-                    <div className="absolute bottom-3 left-3 right-3 text-white text-xs font-bold bg-slate-950/80 backdrop-blur-xs p-2.5 rounded-xl border border-white/10 flex items-center justify-between">
-                      <span>{t.storeBanner.catalogBadge}</span>
-                      <span className="text-blue-400 font-bold">{t.storeBanner.perksBadge}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
 
         {/* Live Booking Tracker */}
         <BookingTracker bookings={bookings} />
@@ -286,6 +223,8 @@ export default function Home() {
           <Phone className="w-6 h-6" />
         </a>
       </div>
+      {/* Slide-over Cart & Express Checkout Drawer */}
+      <CartDrawer />
     </div>
   );
 }

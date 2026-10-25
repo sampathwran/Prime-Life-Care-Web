@@ -12,7 +12,8 @@ import {
   updateDoc
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { BookingSubmission, EquipmentOrder, ServiceItem, ServiceTierOption, GoogleReviewItem, GalleryItem } from '@/types';
+import { BookingSubmission, EquipmentOrder, ServiceItem, ServiceTierOption, GoogleReviewItem, GalleryItem, MedicalItem } from '@/types';
+import { initialMedicalItems } from '@/data/medicalItems';
 
 // ======================== BOOKINGS ========================
 
@@ -216,13 +217,35 @@ export function subscribeToUserBookings(
 export async function saveOrderToFirestore(order: EquipmentOrder): Promise<void> {
   try {
     const docRef = doc(db, 'orders', order.orderCode);
-    await setDoc(docRef, {
-      ...order,
+    const orderData = {
+      id: order.id || order.orderCode,
+      orderCode: order.orderCode,
+      userId: order.userId || 'guest',
       customerName: order.contactName,
       customerPhone: order.contactPhone,
-      orderStatus: order.status === 'order_received' ? 'pending' : order.status,
+      deliveryAddress: order.deliveryAddress,
+      district: order.district,
+      items: order.items.map((it) => ({
+        itemId: it.itemId,
+        itemName: it.name,
+        name: it.name,
+        quantity: it.quantity,
+        priceLKR: it.priceLKR,
+        regularPriceLKR: it.regularPriceLKR || it.priceLKR,
+        imageUrl: it.imageUrl || '',
+        type: 'purchase'
+      })),
+      totalAmountLKR: order.totalAmountLKR,
+      paymentMethod: order.paymentMethod, // 'cod' or 'bank_transfer'
+      paymentStatus: order.paymentMethod === 'cod' ? 'cod_pending' : 'pending_verification',
+      bankSlipUrl: order.bankSlipUrl || '',
+      bankReference: order.bankReference || '',
+      orderStatus: 'pending',
+      isRental: false,
+      createdAt: order.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString()
-    });
+    };
+    await setDoc(docRef, orderData, { merge: true });
     console.log('[Firestore] Order saved successfully:', order.orderCode);
   } catch (error) {
     console.error('[Firestore] Error saving order:', error);
@@ -540,6 +563,121 @@ export function subscribeToLiveGallery(onUpdate: (items: GalleryItem[]) => void)
     }
   );
 }
+
+// ======================== MEDICAL STORE PRODUCTS ========================
+
+/**
+ * Subscribe to live published medical store items in Firestore 'medical_items' collection
+ */
+export function subscribeToLiveProducts(onUpdate: (items: MedicalItem[]) => void): () => void {
+  const collRef = collection(db, 'medical_items');
+  return onSnapshot(
+    collRef,
+    (snap) => {
+      if (snap.empty) {
+        onUpdate(initialMedicalItems);
+        return;
+      }
+      const list: MedicalItem[] = snap.docs.map((docSnap) => {
+        const d = docSnap.data();
+        const regularPrice = Number(d.regularPriceLKR || d.buyPriceLKR || d.priceLKR || 0);
+        const salePrice = Number(d.salePriceLKR || d.buyPriceLKR || d.priceLKR || regularPrice);
+        const discountPct = d.discountPercentage !== undefined
+          ? Number(d.discountPercentage)
+          : (regularPrice > salePrice ? Math.round(((regularPrice - salePrice) / regularPrice) * 100) : 0);
+
+        // Normalize images: ensure array of strings with up to 5 images
+        let images: string[] = [];
+        if (Array.isArray(d.images) && d.images.length > 0) {
+          images = d.images;
+        } else if (Array.isArray(d.imageUrls) && d.imageUrls.length > 0) {
+          images = d.imageUrls;
+        } else if (typeof d.imageUrl === 'string') {
+          images = [d.imageUrl];
+        } else {
+          images = initialMedicalItems[0].images;
+        }
+
+        // Normalize localized name
+        const nameObj = typeof d.name === 'object' && d.name !== null
+          ? d.name
+          : {
+              en: d.nameEn || d.name || 'Medical Product',
+              si: d.nameSi || d.nameEn || d.name || 'වෛද්‍ය උපකරණය',
+              ta: d.nameTa || d.nameEn || d.name || 'மருத்துவ உபகரணங்கள்'
+            };
+
+        // Normalize localized description
+        const descObj = typeof d.description === 'object' && d.description !== null
+          ? d.description
+          : {
+              en: typeof d.description === 'string' ? d.description : 'High quality medical equipment.',
+              si: typeof d.descriptionSi === 'string' ? d.descriptionSi : typeof d.description === 'string' ? d.description : 'උසස් තත්ත්වයේ වෛද්‍ය උපකරණය.',
+              ta: typeof d.descriptionTa === 'string' ? d.descriptionTa : typeof d.description === 'string' ? d.description : 'உயர்தர மருத்துவ உபகரணங்கள்.'
+            };
+
+        const stock = typeof d.stock === 'number' ? d.stock : 1;
+
+        return {
+          id: d.id || docSnap.id,
+          name: nameObj,
+          category: d.category || 'equipment',
+          priceLKR: salePrice,
+          regularPriceLKR: regularPrice,
+          salePriceLKR: salePrice,
+          discountPercentage: discountPct,
+          rentalMonthlyLKR: d.rentalMonthlyLKR ? Number(d.rentalMonthlyLKR) : undefined,
+          stock: stock,
+          inStock: d.inStock !== false && stock > 0,
+          badge: d.badge || (discountPct > 0 ? `${discountPct}% OFF • Verified ICU` : 'Essential Care'),
+          brand: d.brand || 'Paramount Health',
+          description: descObj,
+          images: images,
+          features: Array.isArray(d.features) ? d.features : initialMedicalItems[0].features,
+          isAvailable: d.isAvailable !== false,
+          createdAt: d.createdAt || new Date().toISOString()
+        };
+      });
+
+      // Filter available products
+      const available = list.filter((p) => p.isAvailable !== false);
+      if (available.length === 0) {
+        onUpdate(initialMedicalItems);
+      } else {
+        onUpdate(available);
+      }
+    },
+    (err) => {
+      console.warn('[Firestore] Error subscribing to live products, using fallback:', err);
+      onUpdate(initialMedicalItems);
+    }
+  );
+}
+
+/**
+ * Find order by order code or phone
+ */
+export async function findOrderByCode(queryCode: string): Promise<EquipmentOrder | null> {
+  try {
+    const trimmed = queryCode.trim().toUpperCase();
+    const docRef = doc(db, 'orders', trimmed);
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      return snap.data() as EquipmentOrder;
+    }
+    // Also try search by orderCode field
+    const q = query(collection(db, 'orders'), where('orderCode', '==', trimmed));
+    const querySnap = await getDocs(q);
+    if (!querySnap.empty) {
+      return querySnap.docs[0].data() as EquipmentOrder;
+    }
+    return null;
+  } catch (err) {
+    console.error('[Firestore] Error finding order:', err);
+    return null;
+  }
+}
+
 
 
 

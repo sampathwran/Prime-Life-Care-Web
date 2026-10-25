@@ -4,7 +4,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
-import { Heart, Phone, Menu, X, Shield, Clock, LogIn, ShoppingBag, Globe, ChevronDown, Check } from 'lucide-react';
+import { useCart } from '@/context/CartContext';
+import { Heart, Phone, Menu, X, Shield, Clock, LogIn, ShoppingBag, ShoppingCart, Globe, ChevronDown, Check } from 'lucide-react';
 import { Language } from '@/types';
 
 interface NavbarProps {
@@ -28,6 +29,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const { language, setLanguage, t } = useLanguage();
   const { user } = useAuth();
+  const { cartCount, openCartDrawer } = useCart();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const langDropdownRef = useRef<HTMLDivElement>(null);
@@ -132,6 +134,20 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Right Actions: Book CTA in middle, Language Dropdown, Profile / Auth at the far right */}
           <div className="hidden sm:flex items-center gap-3">
+            {/* Shopping Cart Button */}
+            <button
+              onClick={openCartDrawer}
+              className="relative p-2.5 rounded-xl border border-slate-200 hover:border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-800 transition-all flex items-center justify-center cursor-pointer shadow-2xs"
+              title="Shopping Cart"
+            >
+              <ShoppingCart className="w-4 h-4 text-slate-700" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 rounded-full bg-blue-600 text-white text-[11px] font-black flex items-center justify-center shadow-xs">
+                  {cartCount}
+                </span>
+              )}
+            </button>
+
             {/* Book Now Button (In the Middle) */}
             <Link
               href="/booking"
@@ -262,6 +278,20 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <LogIn className="w-4 h-4" />
               </button>
             )}
+
+            {/* Mobile Cart Button */}
+            <button
+              onClick={openCartDrawer}
+              className="relative p-1.5 text-slate-700 hover:text-slate-900 rounded-lg hover:bg-slate-100 cursor-pointer"
+              title="Cart"
+            >
+              <ShoppingCart className="w-5 h-5" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[17px] h-[17px] px-1 rounded-full bg-blue-600 text-white text-[10px] font-black flex items-center justify-center shadow-xs">
+                  {cartCount}
+                </span>
+              )}
+            </button>
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

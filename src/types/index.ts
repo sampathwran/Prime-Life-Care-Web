@@ -61,14 +61,31 @@ export interface StaffTier {
 export interface MedicalItem {
   id: string;
   name: LocalizedString;
-  category: 'equipment' | 'mobility' | 'hygiene' | 'monitoring';
+  category: 'equipment' | 'mobility' | 'hygiene' | 'monitoring' | string;
   priceLKR: number;
+  regularPriceLKR?: number;
+  salePriceLKR?: number;
+  discountPercentage?: number;
   rentalMonthlyLKR?: number;
+  stock?: number;
   inStock: boolean;
   badge?: string;
   brand?: string;
   description: LocalizedString;
   images: string[];
+  features?: LocalizedList | string[];
+  isAvailable?: boolean;
+  createdAt?: string;
+}
+
+export interface CartItem {
+  item: MedicalItem;
+  quantity: number;
+}
+
+export interface SavedItem {
+  item: MedicalItem;
+  savedAt: string;
 }
 
 export interface EquipmentOrder {
@@ -80,14 +97,21 @@ export interface EquipmentOrder {
     name: string;
     quantity: number;
     priceLKR: number;
+    regularPriceLKR?: number;
+    imageUrl?: string;
   }[];
   totalAmountLKR: number;
   paymentMethod: 'cod' | 'bank_transfer' | 'online_card';
+  paymentStatus?: 'cod_pending' | 'pending_verification' | 'paid';
+  bankSlipUrl?: string;
+  bankReference?: string;
   deliveryAddress: string;
   district: string;
   contactName: string;
   contactPhone: string;
-  status: 'order_received' | 'processing' | 'dispatched' | 'delivered';
+  contactEmail?: string;
+  status: 'order_received' | 'processing' | 'dispatched' | 'delivered' | 'cancelled' | string;
+  orderStatus?: 'pending' | 'confirmed' | 'dispatched' | 'delivered' | 'cancelled' | string;
   createdAt: string;
   updatedAt?: string;
 }
