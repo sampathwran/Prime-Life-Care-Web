@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
-import { Heart, Phone, Mail, MapPin, AlertTriangle } from 'lucide-react';
+import { Phone, Mail, MapPin, AlertTriangle } from 'lucide-react';
 
 interface FooterProps {
   onNavigateToServices?: () => void;
@@ -88,6 +89,22 @@ export const Footer: React.FC<FooterProps> = ({
                   {t.nav.track}
                 </button>
               </li>
+              <li>
+                <Link
+                  href="/privacy-policy"
+                  className="hover:text-blue-400 transition-colors cursor-pointer"
+                >
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/terms"
+                  className="hover:text-blue-400 transition-colors cursor-pointer"
+                >
+                  Terms & Conditions
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -129,8 +146,19 @@ export const Footer: React.FC<FooterProps> = ({
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-slate-800 text-center text-xs text-slate-500">
+        <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <p>{t.footer.copyright}</p>
+          <div className="flex items-center gap-5">
+            <Link href="/privacy-policy" className="hover:text-blue-400 transition-colors">
+              Privacy Policy
+            </Link>
+            <Link href="/terms" className="hover:text-blue-400 transition-colors">
+              Terms & Conditions
+            </Link>
+            <Link href="/privacy-policy#delete-account" className="hover:text-blue-400 transition-colors">
+              Data Deletion Request
+            </Link>
+          </div>
         </div>
       </div>
     </footer>
