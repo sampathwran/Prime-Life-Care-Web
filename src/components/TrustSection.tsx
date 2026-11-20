@@ -102,30 +102,30 @@ export const TrustSection: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Column: 4 Key Pillars */}
-          <div className="lg:col-span-7 grid sm:grid-cols-2 gap-3 sm:gap-3.5">
+          {/* Right Column: 4 Key Pillars (2x2 Grid on Mobile & Desktop) */}
+          <div className="lg:col-span-7 grid grid-cols-2 gap-2.5 sm:gap-3.5">
             {t.trust.items.map((item, index) => (
               <div
                 key={index}
-                className="bg-white rounded-2xl p-4 sm:p-5 shadow-2xs hover:shadow-md transition-all border border-slate-200 hover:border-slate-300 flex flex-col justify-between group"
+                className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-2xs hover:shadow-md transition-all border border-slate-200 hover:border-slate-300 flex flex-col justify-between group min-w-0"
               >
                 <div>
                   <div
-                    className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl border flex items-center justify-center mb-3 sm:mb-3.5 ${iconBgClasses[index % iconBgClasses.length]}`}
+                    className={`w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl border flex items-center justify-center mb-2.5 sm:mb-3.5 ${iconBgClasses[index % iconBgClasses.length]}`}
                   >
                     {icons[index % icons.length]}
                   </div>
-                  <h3 className="text-sm sm:text-base font-bold text-slate-900 mb-1.5 leading-snug">
+                  <h3 className="text-xs sm:text-base font-bold text-slate-900 mb-1 sm:mb-1.5 leading-snug">
                     {item.title}
                   </h3>
-                  <p className="text-xs text-slate-600 leading-relaxed">
+                  <p className="text-[11px] sm:text-xs text-slate-600 leading-relaxed">
                     {item.desc}
                   </p>
                 </div>
 
-                <div className="mt-3.5 sm:mt-4 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-semibold">
-                  <span>{t.trust.standardPrefix}{index + 1}</span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                <div className="mt-2.5 sm:mt-4 pt-2 sm:pt-2.5 border-t border-slate-100 flex items-center justify-between text-[10px] sm:text-xs text-slate-500 font-semibold">
+                  <span className="truncate">{t.trust.standardPrefix}{index + 1}</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0"></span>
                 </div>
               </div>
             ))}
