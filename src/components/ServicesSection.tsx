@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { ServiceItem, ServiceCategory, StaffTierId, ServiceTierOption } from '@/types';
 import { staffTiers } from '@/data/staffTiers';
@@ -17,7 +17,9 @@ import {
   Baby,
   Smile,
   X,
-  Info
+  Info,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 interface ServicesSectionProps {
@@ -37,6 +39,41 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
   
   // Tier comparison modal open state
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
+
+  // Mobile horizontal package slider state & ref
+  const mobileSliderRef = useRef<HTMLDivElement>(null);
+  const [activeSlideIndex, setActiveSlideIndex] = useState<number>(0);
+
+  // Reset mobile slider to first package when category filter changes
+  useEffect(() => {
+    setActiveSlideIndex(0);
+    if (mobileSliderRef.current) {
+      mobileSliderRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+    }
+  }, [selectedCategory]);
+
+  const handleMobileSliderScroll = () => {
+    const container = mobileSliderRef.current;
+    if (!container) return;
+    const firstCard = container.firstElementChild as HTMLElement | null;
+    if (!firstCard) return;
+    const step = firstCard.offsetWidth + 14; // card width + gap-3.5 (14px)
+    if (step > 0) {
+      const idx = Math.round(container.scrollLeft / step);
+      setActiveSlideIndex(Math.max(0, Math.min(idx, filteredServices.length - 1)));
+    }
+  };
+
+  const scrollToPackageSlide = (idx: number) => {
+    const container = mobileSliderRef.current;
+    if (!container) return;
+    const clamped = Math.max(0, Math.min(idx, filteredServices.length - 1));
+    const targetCard = container.children[clamped] as HTMLElement | undefined;
+    if (targetCard) {
+      targetCard.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+    setActiveSlideIndex(clamped);
+  };
 
   const getServiceIcon = (iconName: string) => {
     switch (iconName) {
@@ -228,9 +265,9 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
           </button>
         </div>
 
-        {/* Dynamic Services Grid with Interactive Qualification Tiers */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {filteredServices.map((service) => {
+        {/* Helper renderer for each Care Package Card (Shared between Mobile Slider & Desktop Grid) */}
+        {(() => {
+          const renderServiceCard = (service: ServiceItem) => {
             const currentTierId: StaffTierId =
               selectedTiers[service.id] ||
               service.defaultTierId ||
@@ -238,7 +275,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
               'nvq_4_caregiver';
 
             const activeTierOption: ServiceTierOption | undefined = service.tiers?.find(
-              (t) => t.tierId === currentTierId
+              (tierOpt) => tierOpt.tierId === currentTierId
             );
 
             const activePrice = activeTierOption ? activeTierOption.priceLKR : service.priceLKR;
@@ -258,7 +295,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
             return (
               <div
                 key={service.id}
-                className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 hover:border-slate-300 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group"
+                className="bg-white rounded-2xl p-4 sm:p-6 border border-slate-200 hover:border-slate-300 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group w-full h-full"
               >
                 <div>
                   {/* Top: Icon + Dynamic Price & Badge */}
@@ -293,7 +330,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
                       <Clock className="w-3 h-3 text-slate-500" />
                       <span>{t.services.hoursPrefix} {service.hours}h</span>
                     </div>
-                    <h3 className="text-lg font-bold text-slate-900 leading-snug">
+                    <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-snug">
                       {service.name[language]}
                     </h3>
                   </div>
@@ -306,11 +343,11 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
                   {/* INTERACTIVE QUALIFICATION TIER TOGGLE PILLS */}
                   {service.tiers && service.tiers.length > 1 && (
                     <div className="mb-4 p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                      <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
                         <span className="text-[10px] font-bold text-slate-500 uppercase">
                           {t.services.selectStaffTier}
                         </span>
-                        <span className="text-[10px] text-blue-700 font-bold">
+                        <span className="text-[10px] text-blue-700 font-bold truncate">
                           {activeTierOption?.tierName[language]}
                         </span>
                       </div>
@@ -365,15 +402,99 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
                 <button
                   type="button"
                   onClick={() => onSelectServiceToBook(service, currentTierId)}
-                  className="w-full py-3 rounded-xl bg-slate-900 hover:bg-blue-600 text-white font-bold text-xs sm:text-sm transition-colors flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                  className="w-full py-3 px-3 rounded-xl bg-slate-900 hover:bg-blue-600 text-white font-bold text-xs sm:text-sm transition-colors flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
                 >
-                  <span>{t.services.bookThis} ({getTierShortLabel(currentTierId, activeTierOption)})</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <span className="truncate">{t.services.bookThis} ({getTierShortLabel(currentTierId, activeTierOption)})</span>
+                  <ArrowRight className="w-4 h-4 shrink-0" />
                 </button>
               </div>
             );
-          })}
-        </div>
+          };
+
+          return (
+            <>
+              {/* MOBILE HORIZONTAL SWIPEABLE PACKAGE SLIDER (< md) */}
+              <div className="md:hidden">
+                {/* Swipe Hint & Counter Bar */}
+                {filteredServices.length > 1 && (
+                  <div className="flex items-center justify-between mb-3 px-0.5">
+                    <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
+                      {language === 'si'
+                        ? 'පැකේජ වමට/දකුණට ස්ලයිඩ් කරන්න'
+                        : language === 'ta'
+                        ? 'தொகுப்புகளை இடது/வலது ஸ்வைப் செய்க'
+                        : 'Swipe left or right to browse packages'}
+                    </span>
+                    <span className="text-[11px] font-extrabold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded-full">
+                      {Math.min(activeSlideIndex + 1, filteredServices.length)} / {filteredServices.length}
+                    </span>
+                  </div>
+                )}
+
+                {/* Snap Horizontal Scroll Track */}
+                <div
+                  ref={mobileSliderRef}
+                  onScroll={handleMobileSliderScroll}
+                  className="flex overflow-x-auto snap-x snap-mandatory gap-3.5 pb-4 -mx-4 px-4 no-scrollbar scroll-smooth items-stretch"
+                >
+                  {filteredServices.map((service) => (
+                    <div
+                      key={service.id}
+                      className="w-[85vw] max-w-[345px] shrink-0 snap-center flex"
+                    >
+                      {renderServiceCard(service)}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Mobile Slider Prev/Next Controls & Dot Indicators */}
+                {filteredServices.length > 1 && (
+                  <div className="flex items-center justify-center gap-3 mt-1">
+                    <button
+                      type="button"
+                      onClick={() => scrollToPackageSlide(activeSlideIndex > 0 ? activeSlideIndex - 1 : filteredServices.length - 1)}
+                      aria-label="Previous package"
+                      className="w-9 h-9 rounded-full bg-white border border-slate-200 shadow-xs text-slate-700 flex items-center justify-center active:scale-95 cursor-pointer"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+
+                    <div className="flex items-center justify-center gap-1.5 flex-wrap max-w-[60vw]">
+                      {filteredServices.map((svc, idx) => (
+                        <button
+                          key={svc.id}
+                          type="button"
+                          onClick={() => scrollToPackageSlide(idx)}
+                          aria-label={`View package ${idx + 1}`}
+                          className={`h-2 rounded-full transition-all cursor-pointer ${
+                            activeSlideIndex === idx
+                              ? 'w-6 bg-blue-600'
+                              : 'w-2 bg-slate-300 hover:bg-slate-400'
+                          }`}
+                        />
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => scrollToPackageSlide((activeSlideIndex + 1) % filteredServices.length)}
+                      aria-label="Next package"
+                      className="w-9 h-9 rounded-full bg-white border border-slate-200 shadow-xs text-slate-700 flex items-center justify-center active:scale-95 cursor-pointer"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* DESKTOP & TABLET GRID (md+) */}
+              <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredServices.map((service) => renderServiceCard(service))}
+              </div>
+            </>
+          );
+        })()}
 
         {/* Dynamic Admin Notification Note */}
         <div className="mt-10 text-center text-xs text-slate-500 bg-white py-3 px-4 rounded-xl border border-slate-200 max-w-xl mx-auto">
