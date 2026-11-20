@@ -752,10 +752,10 @@ export default function ProfilePage() {
       />
 
       {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3.5 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
         
-        {/* Breadcrumb & Portal Heading */}
-        <div className="mb-6">
+        {/* Desktop Breadcrumb & Portal Heading (Hidden on mobile when logged in so mobile starts right with the sleek Profile Hero) */}
+        <div className={`${user ? 'hidden lg:block' : 'block'} mb-5 sm:mb-6`}>
           <nav className="flex items-center gap-2 text-xs text-slate-400 mb-2">
             <Link href="/" className="hover:text-blue-600 transition-colors">{t.home}</Link>
             <ChevronRight className="w-3 h-3" />
@@ -764,7 +764,7 @@ export default function ProfilePage() {
           
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+              <h1 className="text-xl sm:text-3xl font-black text-slate-900 tracking-tight">
                 {t.portalTitle}
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 mt-1">
@@ -776,7 +776,7 @@ export default function ProfilePage() {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => router.push('/booking')}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-blue-500/20 hover:shadow-lg transition-all active:scale-95 cursor-pointer flex items-center gap-2"
+                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-blue-500/20 hover:shadow-lg transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2"
               >
                 <Plus className="w-4 h-4" />
                 <span>{t.newBookingBtn}</span>
@@ -787,11 +787,11 @@ export default function ProfilePage() {
 
         {/* Guest View: If user is not logged in */}
         {!user ? (
-          <div className="bg-white rounded-3xl p-8 sm:p-12 border border-slate-200 shadow-sm text-center max-w-2xl mx-auto my-12">
-            <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-4 border border-blue-100 shadow-xs">
-              <User className="w-8 h-8" />
+          <div className="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-12 border border-slate-200 shadow-sm text-center max-w-2xl mx-auto my-6 sm:my-12">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-4 border border-blue-100 shadow-xs">
+              <User className="w-7 h-7 sm:w-8 sm:h-8" />
             </div>
-            <h2 className="text-2xl font-black text-slate-900">{t.guestTitle}</h2>
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900">{t.guestTitle}</h2>
             <p className="text-xs sm:text-sm text-slate-600 mt-2 max-w-md mx-auto leading-relaxed">
               {t.guestSub}
             </p>
@@ -815,27 +815,296 @@ export default function ProfilePage() {
             </div>
           </div>
         ) : (
-          /* Logged In View: Full Two-Column Dashboard (Like SummerCabs Profile) */
-          <div className="grid lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+          /* Logged In View: Mobile App-Style Dashboard (< lg) & Full Two-Column Dashboard (lg+) */
+          <div className="grid lg:grid-cols-12 gap-4 sm:gap-6 lg:gap-8 items-start">
             
             {/* LEFT COLUMN: User Identity & Navigation Sidebar (4 Columns) */}
-            <div className="lg:col-span-4 space-y-4 sm:space-y-6">
-              
-              {/* Profile Card */}
-              <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200 shadow-xs">
+            <div className="lg:col-span-4 space-y-4 lg:space-y-6">
+
+              {/* Shared Hidden File Input for Avatar Upload */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handlePhotoUpload}
+                accept="image/*"
+                className="hidden"
+              />
+
+              {/* ===============================================================
+                  MOBILE & TABLET PREMIUM PROFILE HERO CARD (< lg)
+                  =============================================================== */}
+              <div className="lg:hidden bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950 text-white rounded-3xl p-4 sm:p-5 shadow-xl border border-slate-800 relative overflow-hidden">
+                {/* Ambient glow */}
+                <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-blue-500/20 blur-2xl pointer-events-none" />
+                <div className="absolute -bottom-12 -left-12 w-36 h-36 rounded-full bg-indigo-500/15 blur-2xl pointer-events-none" />
+
+                <div className="relative z-10 space-y-4">
+                  {/* Top Mini Bar: Verified Badge + Sign Out */}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-400/30 text-[10px] font-bold">
+                      <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                      <span>{t.verifiedMember}</span>
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowSignOutModal(true)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 hover:bg-red-500/30 text-slate-200 hover:text-white border border-white/15 text-[11px] font-bold transition-all cursor-pointer"
+                    >
+                      <LogOut className="w-3 h-3" />
+                      <span>{language === 'si' ? 'ඉවත් වන්න' : 'Sign Out'}</span>
+                    </button>
+                  </div>
+
+                  {/* User Identity Row */}
+                  <div className="flex items-center gap-3.5">
+                    <div className="relative shrink-0">
+                      {photoURL || user.photoURL ? (
+                        <img
+                          src={photoURL || user.photoURL}
+                          alt={user.name}
+                          className="w-16 h-16 rounded-2xl object-cover border-2 border-white/25 shadow-lg"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-2xl bg-blue-600 text-white font-black text-2xl flex items-center justify-center border-2 border-white/20 shadow-lg">
+                          {user.name.charAt(0) || 'U'}
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="absolute -bottom-1.5 -right-1.5 p-1.5 bg-blue-500 hover:bg-blue-400 text-white rounded-xl shadow-md border-2 border-slate-900 cursor-pointer"
+                        title={t.changePhoto}
+                        aria-label="Change profile photo"
+                      >
+                        <Camera className="w-3 h-3" />
+                      </button>
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <h2 className="text-base sm:text-lg font-black text-white tracking-tight truncate">
+                        {user.name}
+                      </h2>
+                      <p className="text-[11px] text-slate-300 truncate">{user.email}</p>
+                      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 mt-1 text-[11px] text-blue-200">
+                        {user.phone && (
+                          <span className="font-semibold text-white">{user.phone}</span>
+                        )}
+                        <span className="inline-flex items-center gap-0.5 text-slate-300 truncate">
+                          <MapPin className="w-3 h-3 text-sky-400 shrink-0" />
+                          <span className="truncate">{user.city ? `${user.city}, ` : ''}{user.district || 'Colombo'}</span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Frosted Glass 3-Metric Quick Stats */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('bookings')}
+                      className="p-2.5 rounded-2xl bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/15 text-center transition-all cursor-pointer"
+                    >
+                      <span className="text-lg font-black text-sky-300 leading-none block">
+                        {bookings.filter(b => b.status === 'in_progress' || b.status === 'caregiver_assigned').length}
+                      </span>
+                      <span className="text-[10px] font-semibold text-slate-300 block mt-1 truncate">
+                        {t.activeDutiesStat}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('cart')}
+                      className="p-2.5 rounded-2xl bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/15 text-center transition-all cursor-pointer"
+                    >
+                      <span className="text-lg font-black text-amber-300 leading-none block">
+                        {cartCount}
+                      </span>
+                      <span className="text-[10px] font-semibold text-slate-300 block mt-1 truncate">
+                        {language === 'si' ? 'මගේ කරත්තය' : 'My Cart'}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('family')}
+                      className="p-2.5 rounded-2xl bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/15 text-center transition-all cursor-pointer"
+                    >
+                      <span className="text-lg font-black text-emerald-300 leading-none block">
+                        {user.savedPatients?.length || 0}
+                      </span>
+                      <span className="text-[10px] font-semibold text-slate-300 block mt-1 truncate">
+                        {t.savedPatientsStat}
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* Quick CTA Row: New Booking + 24/7 Hotline */}
+                  <div className="grid grid-cols-2 gap-2 pt-0.5">
+                    <button
+                      type="button"
+                      onClick={() => router.push('/booking')}
+                      className="py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md shadow-blue-600/30 flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">{t.newBookingBtn}</span>
+                    </button>
+
+                    <a
+                      href="tel:+94771234567"
+                      className="py-2.5 px-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/30 text-emerald-200 font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                    >
+                      <Phone className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
+                      <span className="truncate">24/7 Hotline</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* ===============================================================
+                  MOBILE & TABLET APP-STYLE 3x3 NAVIGATION LAUNCHER (< lg)
+                  All 9 tabs visible at a glance — zero hidden off-screen tabs!
+                  =============================================================== */}
+              <div className="lg:hidden bg-white rounded-3xl p-3 border border-slate-200/90 shadow-xs">
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    {
+                      id: 'bookings' as const,
+                      label: language === 'si' ? 'සේවා' : 'Bookings',
+                      icon: <Calendar className="w-4 h-4" />,
+                      badge: bookings.length > 0 ? bookings.length : null,
+                      activeBg: 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20',
+                      idleIconBg: 'bg-blue-50 text-blue-600'
+                    },
+                    {
+                      id: 'cart' as const,
+                      label: language === 'si' ? 'කරත්තය' : 'My Cart',
+                      icon: <ShoppingCart className="w-4 h-4" />,
+                      badge: cartCount > 0 ? cartCount : null,
+                      activeBg: 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20',
+                      idleIconBg: 'bg-indigo-50 text-indigo-600'
+                    },
+                    {
+                      id: 'orders' as const,
+                      label: language === 'si' ? 'ඇණවුම්' : 'Orders',
+                      icon: <ShoppingBag className="w-4 h-4" />,
+                      badge: orders.length > 0 ? orders.length : null,
+                      activeBg: 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20',
+                      idleIconBg: 'bg-emerald-50 text-emerald-600'
+                    },
+                    {
+                      id: 'saved' as const,
+                      label: language === 'si' ? 'සුරැකි' : 'Wishlist',
+                      icon: <Heart className="w-4 h-4" />,
+                      badge: saved.length > 0 ? saved.length : null,
+                      activeBg: 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20',
+                      idleIconBg: 'bg-rose-50 text-rose-500'
+                    },
+                    {
+                      id: 'family' as const,
+                      label: language === 'si' ? 'පවුලේ අය' : 'Family',
+                      icon: <Users className="w-4 h-4" />,
+                      badge: (user.savedPatients?.length || 0) > 0 ? user.savedPatients!.length : null,
+                      activeBg: 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20',
+                      idleIconBg: 'bg-teal-50 text-teal-600'
+                    },
+                    {
+                      id: 'details' as const,
+                      label: language === 'si' ? 'විස්තර' : 'Profile',
+                      icon: <User className="w-4 h-4" />,
+                      badge: null,
+                      activeBg: 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20',
+                      idleIconBg: 'bg-slate-100 text-slate-700'
+                    },
+                    {
+                      id: 'payments' as const,
+                      label: language === 'si' ? 'බිල්පත්' : 'Invoices',
+                      icon: <CreditCard className="w-4 h-4" />,
+                      badge: payments.length > 0 ? payments.length : null,
+                      activeBg: 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20',
+                      idleIconBg: 'bg-amber-50 text-amber-600'
+                    },
+                    {
+                      id: 'notifications' as const,
+                      label: language === 'si' ? 'දැනුම්දීම්' : 'Alerts',
+                      icon: <Bell className="w-4 h-4" />,
+                      badge: unreadNotificationsCount > 0 ? unreadNotificationsCount : null,
+                      isAlert: unreadNotificationsCount > 0,
+                      activeBg: 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20',
+                      idleIconBg: 'bg-purple-50 text-purple-600'
+                    },
+                    {
+                      id: 'emergency' as const,
+                      label: '1990 / SOS',
+                      icon: <Heart className="w-4 h-4 fill-current" />,
+                      badge: null,
+                      isEmergency: true,
+                      activeBg: 'bg-red-600 text-white border-red-600 shadow-md shadow-red-500/25',
+                      idleIconBg: 'bg-red-50 text-red-600'
+                    }
+                  ].map((item) => {
+                    const isActive = activeTab === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setActiveTab(item.id)}
+                        className={`relative p-2.5 rounded-2xl border flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer ${
+                          isActive
+                            ? item.activeBg
+                            : item.isEmergency
+                            ? 'bg-red-50/60 text-red-700 border-red-200/80 hover:bg-red-50'
+                            : 'bg-slate-50/70 text-slate-700 border-slate-200/70 hover:bg-slate-100'
+                        }`}
+                      >
+                        {item.badge !== null && (
+                          <span
+                            className={`absolute top-1.5 right-1.5 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-black flex items-center justify-center ${
+                              item.isAlert
+                                ? 'bg-red-500 text-white animate-pulse'
+                                : isActive
+                                ? 'bg-white/25 text-white'
+                                : 'bg-slate-900 text-white'
+                            }`}
+                          >
+                            {item.badge}
+                          </span>
+                        )}
+                        <div
+                          className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                            isActive ? 'bg-white/20 text-white' : item.idleIconBg
+                          }`}
+                        >
+                          {item.icon}
+                        </div>
+                        <span className="text-[11px] font-bold leading-none truncate max-w-full">
+                          {item.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* ===============================================================
+                  DESKTOP PROFILE CARD (lg+)
+                  =============================================================== */}
+              <div className="hidden lg:block bg-white rounded-3xl p-6 border border-slate-200 shadow-xs">
                 
                 {/* Avatar with Camera Uploader */}
-                <div className="flex flex-row sm:flex-col items-center sm:text-center gap-4 sm:gap-0 pb-4 sm:pb-5 border-b border-slate-100">
-                  <div className="relative group sm:mb-3 shrink-0">
+                <div className="flex flex-col items-center text-center pb-5 border-b border-slate-100">
+                  <div className="relative group mb-3 shrink-0">
                     {photoURL || user.photoURL ? (
                       <img
                         src={photoURL || user.photoURL}
                         alt={user.name}
-                        className="w-16 h-16 sm:w-24 sm:h-24 rounded-2xl sm:rounded-3xl object-cover border-2 border-slate-100 shadow-md group-hover:opacity-90 transition-opacity"
+                        className="w-24 h-24 rounded-3xl object-cover border-2 border-slate-100 shadow-md group-hover:opacity-90 transition-opacity"
                         referrerPolicy="no-referrer"
                       />
                     ) : (
-                      <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-2xl sm:rounded-3xl bg-blue-600 text-white font-black text-2xl sm:text-3xl flex items-center justify-center shadow-md">
+                      <div className="w-24 h-24 rounded-3xl bg-blue-600 text-white font-black text-3xl flex items-center justify-center shadow-md">
                         {user.name.charAt(0) || 'U'}
                       </div>
                     )}
@@ -844,182 +1113,46 @@ export default function ProfilePage() {
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="absolute -bottom-1.5 -right-1.5 sm:-bottom-2 sm:-right-2 p-1.5 sm:p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl sm:rounded-2xl shadow-md border-2 border-white transition-transform hover:scale-110 cursor-pointer"
+                      className="absolute -bottom-2 -right-2 p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-md border-2 border-white transition-transform hover:scale-110 cursor-pointer"
                       title={t.changePhoto}
                     >
-                      <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <Camera className="w-4 h-4" />
                     </button>
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handlePhotoUpload}
-                      accept="image/*"
-                      className="hidden"
-                    />
                   </div>
 
-                  <div className="min-w-0 flex-1 sm:flex-none text-left sm:text-center">
-                    <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight truncate">{user.name}</h3>
-                    <div className="flex items-center sm:justify-center gap-1.5 mt-1">
-                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] sm:text-[11px] font-bold">
-                        {t.verifiedMember}
-                      </span>
-                    </div>
+                  <h3 className="text-lg font-black text-slate-900 tracking-tight">{user.name}</h3>
+                  <div className="flex items-center justify-center gap-1.5 mt-1">
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold">
+                      {t.verifiedMember}
+                    </span>
+                  </div>
 
-                    <p className="text-xs text-slate-500 mt-1.5 sm:mt-2 flex flex-col gap-0.5 truncate">
-                      <span className="truncate">{user.email}</span>
-                      {user.phone && <span className="font-semibold text-slate-800">{user.phone}</span>}
-                    </p>
+                  <p className="text-xs text-slate-500 mt-2 flex flex-col gap-0.5">
+                    <span>{user.email}</span>
+                    {user.phone && <span className="font-semibold text-slate-800">{user.phone}</span>}
+                  </p>
 
-                    <div className="text-[11px] text-slate-400 mt-1 sm:mt-2 flex items-center sm:justify-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                      <span className="truncate">{user.city ? `${user.city}, ` : ''}{user.district || 'Colombo'}</span>
-                    </div>
+                  <div className="text-[11px] text-slate-400 mt-2 flex items-center justify-center gap-1">
+                    <MapPin className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    <span>{user.city ? `${user.city}, ` : ''}{user.district || 'Colombo'}</span>
                   </div>
                 </div>
 
                 {/* Quick Stats Grid */}
-                <div className="grid grid-cols-2 gap-2.5 pt-3.5 sm:pt-4 text-center">
-                  <div className="p-2.5 sm:p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                <div className="grid grid-cols-2 gap-2.5 pt-4 text-center">
+                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
                     <span className="text-[10px] uppercase font-bold text-slate-400 block">{t.activeDutiesStat}</span>
-                    <span className="text-lg sm:text-xl font-black text-blue-600 mt-0.5 block">
+                    <span className="text-xl font-black text-blue-600 mt-0.5 block">
                       {bookings.filter(b => b.status === 'in_progress' || b.status === 'caregiver_assigned').length}
                     </span>
                   </div>
 
-                  <div className="p-2.5 sm:p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
                     <span className="text-[10px] uppercase font-bold text-slate-400 block">{t.savedPatientsStat}</span>
-                    <span className="text-lg sm:text-xl font-black text-slate-800 mt-0.5 block">
+                    <span className="text-xl font-black text-slate-800 mt-0.5 block">
                       {user.savedPatients?.length || 0}
                     </span>
                   </div>
-                </div>
-              </div>
-
-              {/* Mobile & Tablet Horizontal Scrollable Tab Bar (Instant Tab Switching without scrolling!) */}
-              <div className="lg:hidden -mx-4 px-4 overflow-x-auto no-scrollbar">
-                <div className="flex items-center gap-2 pb-1 w-max">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('bookings')}
-                    className={`px-3.5 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 whitespace-nowrap border transition-all ${
-                      activeTab === 'bookings'
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                        : 'bg-white text-slate-700 border-slate-200'
-                    }`}
-                  >
-                    <Calendar className="w-3.5 h-3.5" />
-                    <span>{language === 'si' ? 'සේවා' : 'Bookings'} ({bookings.length})</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('cart')}
-                    className={`px-3.5 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 whitespace-nowrap border transition-all ${
-                      activeTab === 'cart'
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                        : 'bg-white text-slate-700 border-slate-200'
-                    }`}
-                  >
-                    <ShoppingCart className="w-3.5 h-3.5" />
-                    <span>{language === 'si' ? 'කරත්තය' : 'Cart'} ({cartCount})</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('orders')}
-                    className={`px-3.5 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 whitespace-nowrap border transition-all ${
-                      activeTab === 'orders'
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                        : 'bg-white text-slate-700 border-slate-200'
-                    }`}
-                  >
-                    <ShoppingBag className="w-3.5 h-3.5" />
-                    <span>{language === 'si' ? 'ඇණවුම්' : 'Orders'} ({orders.length})</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('saved')}
-                    className={`px-3.5 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 whitespace-nowrap border transition-all ${
-                      activeTab === 'saved'
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                        : 'bg-white text-slate-700 border-slate-200'
-                    }`}
-                  >
-                    <Heart className="w-3.5 h-3.5" />
-                    <span>{language === 'si' ? 'සුරැකි' : 'Saved'} ({saved.length})</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('family')}
-                    className={`px-3.5 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 whitespace-nowrap border transition-all ${
-                      activeTab === 'family'
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                        : 'bg-white text-slate-700 border-slate-200'
-                    }`}
-                  >
-                    <Users className="w-3.5 h-3.5" />
-                    <span>{language === 'si' ? 'පවුල' : 'Family'} ({user.savedPatients?.length || 0})</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('details')}
-                    className={`px-3.5 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 whitespace-nowrap border transition-all ${
-                      activeTab === 'details'
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                        : 'bg-white text-slate-700 border-slate-200'
-                    }`}
-                  >
-                    <User className="w-3.5 h-3.5" />
-                    <span>{language === 'si' ? 'විස්තර' : 'Profile'}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('payments')}
-                    className={`px-3.5 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 whitespace-nowrap border transition-all ${
-                      activeTab === 'payments'
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                        : 'bg-white text-slate-700 border-slate-200'
-                    }`}
-                  >
-                    <CreditCard className="w-3.5 h-3.5" />
-                    <span>{language === 'si' ? 'බිල්පත්' : 'Invoices'}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('notifications')}
-                    className={`px-3.5 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 whitespace-nowrap border transition-all ${
-                      activeTab === 'notifications'
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                        : 'bg-white text-slate-700 border-slate-200'
-                    }`}
-                  >
-                    <Bell className="w-3.5 h-3.5" />
-                    <span>{language === 'si' ? 'දැනුම්දීම්' : 'Alerts'}</span>
-                    {unreadNotificationsCount > 0 && (
-                      <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-red-500 text-white">
-                        {unreadNotificationsCount}
-                      </span>
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('emergency')}
-                    className={`px-3.5 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 whitespace-nowrap border transition-all ${
-                      activeTab === 'emergency'
-                        ? 'bg-red-600 text-white border-red-600 shadow-sm'
-                        : 'bg-red-50 text-red-600 border-red-200'
-                    }`}
-                  >
-                    <Heart className="w-3.5 h-3.5 fill-current" />
-                    <span>1990 / SOS</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowSignOutModal(true)}
-                    className="px-3.5 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 whitespace-nowrap border border-slate-200 bg-white text-slate-500"
-                  >
-                    <LogOut className="w-3.5 h-3.5" />
-                    <span>{language === 'si' ? 'ඉවත් වන්න' : 'Sign Out'}</span>
-                  </button>
                 </div>
               </div>
 
@@ -1256,18 +1389,18 @@ export default function ProfilePage() {
                 <div className="space-y-6">
                   
                   {/* Top Bar with Filter & Add Button */}
-                  <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
                     <div>
-                      <h2 className="text-lg font-black text-slate-900">{t.bookingsTitle}</h2>
+                      <h2 className="text-base sm:text-lg font-black text-slate-900">{t.bookingsTitle}</h2>
                       <p className="text-xs text-slate-500 mt-0.5">{t.bookingsSub}</p>
                     </div>
 
                     {/* Filter Pills */}
-                    <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl text-xs font-bold">
+                    <div className="grid grid-cols-3 sm:flex items-center gap-1 p-1 bg-slate-100 rounded-2xl text-[11px] sm:text-xs font-bold w-full sm:w-auto">
                       <button
                         type="button"
                         onClick={() => setBookingFilter('all')}
-                        className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+                        className={`px-2.5 sm:px-3 py-1.5 rounded-xl transition-all cursor-pointer truncate ${
                           bookingFilter === 'all' ? 'bg-white text-blue-700 shadow-xs' : 'text-slate-600'
                         }`}
                       >
@@ -1276,7 +1409,7 @@ export default function ProfilePage() {
                       <button
                         type="button"
                         onClick={() => setBookingFilter('active')}
-                        className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+                        className={`px-2.5 sm:px-3 py-1.5 rounded-xl transition-all cursor-pointer truncate ${
                           bookingFilter === 'active' ? 'bg-white text-blue-700 shadow-xs' : 'text-slate-600'
                         }`}
                       >
@@ -1285,7 +1418,7 @@ export default function ProfilePage() {
                       <button
                         type="button"
                         onClick={() => setBookingFilter('completed')}
-                        className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+                        className={`px-2.5 sm:px-3 py-1.5 rounded-xl transition-all cursor-pointer truncate ${
                           bookingFilter === 'completed' ? 'bg-white text-blue-700 shadow-xs' : 'text-slate-600'
                         }`}
                       >
@@ -1296,15 +1429,15 @@ export default function ProfilePage() {
 
                   {/* Bookings List */}
                   {filteredBookings.length === 0 ? (
-                    <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-xs">
-                      <Calendar className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                      <h4 className="text-base font-bold text-slate-800">{t.noBookingsTitle}</h4>
-                      <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+                    <div className="bg-white rounded-2xl sm:rounded-3xl p-8 sm:p-12 text-center border border-slate-200 shadow-xs">
+                      <Calendar className="w-10 h-10 sm:w-12 sm:h-12 text-slate-300 mx-auto mb-3" />
+                      <h4 className="text-sm sm:text-base font-bold text-slate-800">{t.noBookingsTitle}</h4>
+                      <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto leading-relaxed">
                         {t.noBookingsSub}
                       </p>
                       <button
                         onClick={() => router.push('/booking')}
-                        className="mt-4 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-all cursor-pointer shadow-xs"
+                        className="mt-4 w-full sm:w-auto px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-all cursor-pointer shadow-xs"
                       >
                         {t.newBookingBtn}
                       </button>
@@ -1313,20 +1446,20 @@ export default function ProfilePage() {
                     filteredBookings.map((b) => (
                       <div
                         key={b.id}
-                        className="bg-white rounded-3xl p-6 border border-slate-200 hover:border-slate-300 shadow-xs space-y-5 transition-all"
+                        className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200 hover:border-slate-300 shadow-xs space-y-4 sm:space-y-5 transition-all"
                       >
                         {/* Booking Header: Code + Staff Tier + Status */}
-                        <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
-                          <div className="flex items-center gap-2.5">
-                            <span className="font-black text-slate-900 text-lg">{b.bookingCode}</span>
+                        <div className="flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 pb-3.5 sm:pb-4 border-b border-slate-100">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-black text-slate-900 text-base sm:text-lg">{b.bookingCode}</span>
                             {b.staffTierName && (
-                              <span className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold border border-blue-100">
+                              <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg bg-blue-50 text-blue-700 text-[11px] sm:text-xs font-bold border border-blue-100">
                                 {b.staffTierName}
                               </span>
                             )}
-                            <span className="text-xs text-slate-400">Date: {b.startDate}</span>
+                            <span className="text-[11px] sm:text-xs text-slate-400">Date: {b.startDate}</span>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             {getStatusBadge(b.status)}
                             {b.status !== 'completed' && (
                               <button
@@ -1366,28 +1499,28 @@ export default function ProfilePage() {
                           </div>
                         </div>
 
-                        {/* Details Grid */}
-                        <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
-                            <span className="text-slate-400 block text-[11px] font-medium">{t.labelService}</span>
-                            <strong className="text-slate-900 text-sm mt-0.5 block">{b.serviceName}</strong>
+                        {/* Details Grid (2x2 on Mobile, 4-col on Desktop) */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 text-xs">
+                          <div className="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-slate-50 border border-slate-100 min-w-0">
+                            <span className="text-slate-400 block text-[10px] sm:text-[11px] font-medium">{t.labelService}</span>
+                            <strong className="text-slate-900 text-xs sm:text-sm mt-0.5 block leading-snug">{b.serviceName}</strong>
                           </div>
 
-                          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
-                            <span className="text-slate-400 block text-[11px] font-medium">{t.labelPatient}</span>
-                            <strong className="text-slate-900 text-sm mt-0.5 block">{b.patientName} ({b.patientAge} yrs)</strong>
-                            <span className="text-[11px] text-slate-500 capitalize">{b.mobilityLevel?.replace('_', ' ') || 'Normal'}</span>
+                          <div className="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-slate-50 border border-slate-100 min-w-0">
+                            <span className="text-slate-400 block text-[10px] sm:text-[11px] font-medium">{t.labelPatient}</span>
+                            <strong className="text-slate-900 text-xs sm:text-sm mt-0.5 block leading-snug">{b.patientName} ({b.patientAge} yrs)</strong>
+                            <span className="text-[10px] sm:text-[11px] text-slate-500 capitalize">{b.mobilityLevel?.replace('_', ' ') || 'Normal'}</span>
                           </div>
 
-                          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
-                            <span className="text-slate-400 block text-[11px] font-medium">{t.labelDuration}</span>
-                            <strong className="text-slate-900 text-sm mt-0.5 block">{b.durationDays} {t.labelDaysDuty}</strong>
-                            <span className="text-[11px] text-slate-500">From {b.startDate}</span>
+                          <div className="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-slate-50 border border-slate-100 min-w-0">
+                            <span className="text-slate-400 block text-[10px] sm:text-[11px] font-medium">{t.labelDuration}</span>
+                            <strong className="text-slate-900 text-xs sm:text-sm mt-0.5 block">{b.durationDays} {t.labelDaysDuty}</strong>
+                            <span className="text-[10px] sm:text-[11px] text-slate-500">From {b.startDate}</span>
                           </div>
 
-                          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
-                            <span className="text-slate-400 block text-[11px] font-medium">{t.labelTotalCost}</span>
-                            <strong className="text-blue-700 text-base mt-0.5 block font-black">
+                          <div className="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-slate-50 border border-slate-100 min-w-0">
+                            <span className="text-slate-400 block text-[10px] sm:text-[11px] font-medium">{t.labelTotalCost}</span>
+                            <strong className="text-blue-700 text-sm sm:text-base mt-0.5 block font-black">
                               LKR {(b.totalCostLKR || b.priceLKR).toLocaleString()}
                             </strong>
                             <span className="text-[10px] text-emerald-600 font-bold">{t.labelPaidVerified}</span>
@@ -1438,32 +1571,32 @@ export default function ProfilePage() {
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-2.5">
+                            <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto">
                               {b.assignedCaregiverPhone ? (
                                 <>
                                   <a
                                     href={`tel:${b.assignedCaregiverPhone}`}
-                                    className="px-4 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-800 text-xs font-bold border border-slate-200 transition-colors flex items-center gap-1.5 shadow-2xs"
+                                    className="px-3.5 sm:px-4 py-2.5 sm:py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-800 text-xs font-bold border border-slate-200 transition-colors flex items-center justify-center gap-1.5 shadow-2xs"
                                   >
-                                    <Phone className="w-3.5 h-3.5 text-emerald-600" />
+                                    <Phone className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                                     <span>{t.btnCallStaff}</span>
                                   </a>
                                   <a
                                     href={`https://wa.me/${b.assignedCaregiverPhone.replace(/[^0-9]/g, '')}`}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors flex items-center gap-1.5 shadow-xs"
+                                    className="px-3.5 sm:px-4 py-2.5 sm:py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-xs"
                                   >
-                                    <MessageCircle className="w-3.5 h-3.5" />
+                                    <MessageCircle className="w-3.5 h-3.5 shrink-0" />
                                     <span>{t.btnWhatsapp}</span>
                                   </a>
                                 </>
                               ) : (
                                 <a
                                   href="tel:+94771234567"
-                                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors flex items-center gap-1.5 shadow-xs"
+                                  className="col-span-2 px-4 py-2.5 sm:py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-xs"
                                 >
-                                  <Phone className="w-3.5 h-3.5" />
+                                  <Phone className="w-3.5 h-3.5 shrink-0" />
                                   <span>Hotline: 077 123 4567</span>
                                 </a>
                               )}
@@ -1602,11 +1735,11 @@ export default function ProfilePage() {
 
               {/* TAB 2: PERSONAL DETAILS & EDIT PROFILE */}
               {activeTab === 'details' && (
-                <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-6">
+                <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-8 border border-slate-200 shadow-xs space-y-5 sm:space-y-6">
                   
-                  <div className="pb-4 border-b border-slate-100 flex items-center justify-between">
+                  <div className="pb-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2">
                     <div>
-                      <h2 className="text-lg font-black text-slate-900">{t.detailsTitle}</h2>
+                      <h2 className="text-base sm:text-lg font-black text-slate-900">{t.detailsTitle}</h2>
                       <p className="text-xs text-slate-500 mt-0.5">{t.detailsSub}</p>
                     </div>
                     {isSavedSuccess && (
@@ -1724,7 +1857,7 @@ export default function ProfilePage() {
                     <div className="pt-3 flex justify-end">
                       <button
                         type="submit"
-                        className="px-8 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-blue-500/20 transition-all cursor-pointer flex items-center gap-2"
+                        className="w-full sm:w-auto px-8 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-blue-500/20 transition-all cursor-pointer flex items-center justify-center gap-2"
                       >
                         <Save className="w-4 h-4" />
                         <span>{t.saveChangesBtn}</span>
@@ -1738,12 +1871,12 @@ export default function ProfilePage() {
 
               {/* TAB 3: SAVED FAMILY MEMBERS / PATIENTS */}
               {activeTab === 'family' && (
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-6">
                   
                   {/* Top Bar */}
-                  <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
                     <div>
-                      <h2 className="text-lg font-black text-slate-900">{t.familyTitle}</h2>
+                      <h2 className="text-base sm:text-lg font-black text-slate-900">{t.familyTitle}</h2>
                       <p className="text-xs text-slate-500 mt-0.5">
                         {t.familySub}
                       </p>
@@ -1751,7 +1884,7 @@ export default function ProfilePage() {
 
                     <button
                       onClick={() => setShowAddPatientModal(true)}
-                      className="px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+                      className="w-full sm:w-auto px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
                     >
                       <Plus className="w-4 h-4" />
                       <span>{t.addPatientBtn}</span>
