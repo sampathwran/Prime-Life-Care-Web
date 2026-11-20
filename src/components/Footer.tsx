@@ -32,8 +32,16 @@ export const Footer: React.FC<FooterProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10">
           {/* Col 1: Brand & Bio */}
           <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-full overflow-hidden bg-white p-0.5 border border-slate-700 shrink-0">
+            <Link
+              href="/"
+              onClick={() => {
+                if (typeof window !== 'undefined' && window.location.pathname === '/') {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+              }}
+              className="inline-flex items-center gap-3 group"
+            >
+              <div className="w-11 h-11 rounded-full overflow-hidden bg-white p-0.5 border border-slate-700 shrink-0 group-hover:scale-105 transition-transform">
                 <img
                   src="/logo.png"
                   alt="Prime Life Care Logo"
@@ -41,7 +49,7 @@ export const Footer: React.FC<FooterProps> = ({
                 />
               </div>
               <span className="text-xl font-black text-white tracking-tight">PRIME LIFE <span className="text-blue-400">CARE</span></span>
-            </div>
+            </Link>
             <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
               {t.footer.aboutText}
             </p>
@@ -58,12 +66,17 @@ export const Footer: React.FC<FooterProps> = ({
             </h4>
             <ul className="space-y-2.5 text-xs sm:text-sm">
               <li>
-                <button
-                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                <Link
+                  href="/"
+                  onClick={() => {
+                    if (typeof window !== 'undefined' && window.location.pathname === '/') {
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                  }}
                   className="hover:text-blue-400 transition-colors cursor-pointer"
                 >
                   {t.nav.home}
-                </button>
+                </Link>
               </li>
               <li>
                 <button

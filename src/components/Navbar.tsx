@@ -81,8 +81,17 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Main Navbar */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 sm:h-20 gap-2">
-          {/* Logo */}
-          <div className="flex items-center gap-2 sm:gap-3 cursor-pointer select-none min-w-0" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+          {/* Logo - Always navigates to Home from any page */}
+          <Link
+            href="/"
+            onClick={() => {
+              setMobileMenuOpen(false);
+              if (typeof window !== 'undefined' && window.location.pathname === '/') {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }
+            }}
+            className="flex items-center gap-2 sm:gap-3 cursor-pointer select-none min-w-0"
+          >
             <div className="relative w-9 h-9 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-white shadow-md shadow-blue-500/10 border border-slate-200/80 p-0.5 shrink-0 transition-transform duration-200 hover:scale-105">
               <img
                 src="/logo.png"
@@ -100,7 +109,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span className="block">{language === 'si' ? 'වැඩිහිටි සහ රෝගී සාත්තු සේවය' : language === 'ta' ? 'முதியோர் மற்றும் நோயாளி பராமரிப்பு' : 'Elderly & Patient Care in Sri Lanka'}</span>
               </div>
             </div>
-          </div>
+          </Link>
 
           {/* Desktop Nav Links */}
           <nav className="hidden lg:flex items-center gap-5 text-sm font-semibold text-slate-700">
