@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { GalleryItem } from '@/types';
 import { subscribeToLiveGallery } from '@/lib/firestoreService';
@@ -113,6 +113,22 @@ export const GallerySection: React.FC = () => {
   const [items, setItems] = useState<GalleryItem[]>(DEFAULT_GALLERY_ITEMS);
   const [showAll, setShowAll] = useState<boolean>(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const touchStartX = useRef<number | null>(null);
+
+  const handleLightboxTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleLightboxTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || items.length <= 1) return;
+    const deltaX = e.changedTouches[0].clientX - touchStartX.current;
+    if (deltaX > 40) {
+      setLightboxIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : items.length - 1));
+    } else if (deltaX < -40) {
+      setLightboxIndex((prev) => (prev !== null && prev < items.length - 1 ? prev + 1 : 0));
+    }
+    touchStartX.current = null;
+  };
 
   // Subscribe to real-time gallery updates uploaded/published from Admin panel
   useEffect(() => {
@@ -150,10 +166,10 @@ export const GallerySection: React.FC = () => {
   const activeLightboxItem = lightboxIndex !== null ? items[lightboxIndex] : null;
 
   return (
-    <section id="gallery" className="py-14 sm:py-16 bg-slate-50/70 border-t border-slate-200/80 relative">
+    <section id="gallery" className="py-12 sm:py-16 bg-slate-50/70 border-t border-slate-200/80 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto space-y-2.5 mb-8 sm:mb-10">
+        <div className="text-center max-w-2xl mx-auto space-y-2 mb-7 sm:mb-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200/60 text-blue-700 text-xs font-bold uppercase tracking-wider">
             <Camera className="w-3.5 h-3.5 text-blue-600" />
             <span>
@@ -161,7 +177,7 @@ export const GallerySection: React.FC = () => {
             </span>
           </div>
 
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-snug">
             {language === 'si' ? (
               <>
                 සැබෑ සත්කාර සහ සේවාවන්හි <span className="text-blue-600">ඡායාරූප එකතුව</span>
@@ -181,7 +197,7 @@ export const GallerySection: React.FC = () => {
         </div>
 
         {/* Compact 4-Column Responsive Grid (around 8 photos) */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-2.5 sm:gap-4">
           {displayedItems.map((item, index) => {
             const displayTitle = language === 'si' && item.titleSi ? item.titleSi : item.title;
             const isEighthCardWithMore = !showAll && hasMoreThanEight && index === INITIAL_LIMIT - 1;
@@ -301,10 +317,12 @@ export const GallerySection: React.FC = () => {
             </button>
           </div>
 
-          {/* Lightbox Image Stage with Prev/Next Controls */}
+          {/* Lightbox Image Stage with Prev/Next Controls & Swipe */}
           <div
             className="relative flex-1 flex items-center justify-center max-w-5xl mx-auto w-full my-2"
             onClick={(e) => e.stopPropagation()}
+            onTouchStart={handleLightboxTouchStart}
+            onTouchEnd={handleLightboxTouchEnd}
           >
             {/* Prev Button */}
             {items.length > 1 && (

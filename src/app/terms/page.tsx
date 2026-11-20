@@ -8,7 +8,7 @@ export default function TermsAndConditionsPage() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
       {/* Top Header */}
-      <header className="bg-slate-900 text-white py-10 px-4 border-b border-slate-800">
+      <header className="bg-slate-900 text-white py-7 sm:py-10 px-4 border-b border-slate-800">
         <div className="max-w-4xl mx-auto">
           <Link
             href="/"
@@ -17,12 +17,12 @@ export default function TermsAndConditionsPage() {
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Prime Life Care Home</span>
           </Link>
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-blue-600/20 border border-blue-500/30 text-blue-400">
-              <FileText className="w-7 h-7" />
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-blue-600/20 border border-blue-500/30 text-blue-400 shrink-0">
+              <FileText className="w-6 h-6 sm:w-7 sm:h-7" />
             </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
+            <div className="min-w-0">
+              <h1 className="text-xl sm:text-3xl font-black tracking-tight">
                 Terms & Conditions of Service
               </h1>
               <p className="text-xs sm:text-sm text-slate-400 mt-1">
@@ -34,8 +34,8 @@ export default function TermsAndConditionsPage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 py-10 space-y-8">
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-6 text-sm leading-relaxed">
+      <main className="max-w-4xl mx-auto px-3.5 sm:px-4 py-6 sm:py-10 space-y-6 sm:space-y-8">
+        <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-8 border border-slate-200 shadow-xs space-y-6 text-xs sm:text-sm leading-relaxed">
           <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-slate-100 text-xs text-slate-500">
             <span><strong>Last Updated:</strong> October 27, 2026</span>
             <span><strong>Jurisdiction:</strong> Democratic Socialist Republic of Sri Lanka</span>

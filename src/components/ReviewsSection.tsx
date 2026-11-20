@@ -121,7 +121,7 @@ export const ReviewsSection: React.FC = () => {
   };
 
   return (
-    <section id="reviews" className="py-14 sm:py-18 bg-white border-t border-slate-200">
+    <section id="reviews" className="py-12 sm:py-18 bg-white border-t border-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}
@@ -188,32 +188,32 @@ export const ReviewsSection: React.FC = () => {
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
-          {/* Previous Button */}
+          {/* Previous Button (Desktop side arrow) */}
           {reviews.length > cardsPerView && (
             <button
               type="button"
               onClick={handlePrev}
               aria-label="Previous reviews"
-              className="absolute -left-3 sm:-left-5 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white border border-slate-200 shadow-md text-slate-700 hover:text-slate-950 hover:bg-slate-50 flex items-center justify-center transition-all cursor-pointer"
+              className="hidden sm:flex absolute -left-4 lg:-left-5 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white border border-slate-200 shadow-md text-slate-700 hover:text-slate-950 hover:bg-slate-50 items-center justify-center transition-all cursor-pointer"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
           )}
 
-          {/* Next Button */}
+          {/* Next Button (Desktop side arrow) */}
           {reviews.length > cardsPerView && (
             <button
               type="button"
               onClick={handleNext}
               aria-label="Next reviews"
-              className="absolute -right-3 sm:-right-5 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white border border-slate-200 shadow-md text-slate-700 hover:text-slate-950 hover:bg-slate-50 flex items-center justify-center transition-all cursor-pointer"
+              className="hidden sm:flex absolute -right-4 lg:-right-5 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white border border-slate-200 shadow-md text-slate-700 hover:text-slate-950 hover:bg-slate-50 items-center justify-center transition-all cursor-pointer"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
           )}
 
           {/* Carousel Viewport (Overflow Hidden) */}
-          <div className="overflow-hidden py-2 px-1">
+          <div className="overflow-hidden py-2 px-0.5 sm:px-1">
             <div
               className="flex transition-transform duration-500 ease-out"
               style={{
@@ -230,11 +230,11 @@ export const ReviewsSection: React.FC = () => {
                 return (
                   <div
                     key={rev.id}
-                    className="shrink-0 px-2 sm:px-2.5"
+                    className="shrink-0 px-1.5 sm:px-2.5"
                     style={{ width: `${100 / cardsPerView}%` }}
                   >
                     {/* Compact Modern Google Review Card */}
-                    <div className="bg-slate-50 rounded-xl p-4 sm:p-5 border border-slate-200 shadow-2xs hover:shadow-md hover:border-slate-300 transition-all flex flex-col justify-between h-[210px] sm:h-[220px]">
+                    <div className="bg-slate-50 rounded-xl p-4 sm:p-5 border border-slate-200 shadow-2xs hover:shadow-md hover:border-slate-300 transition-all flex flex-col justify-between min-h-[205px] h-full">
                       <div>
                         {/* Header: Avatar, Name, Location, Date & Google G Logo */}
                         <div className="flex items-start justify-between gap-2 mb-2">
@@ -315,29 +315,49 @@ export const ReviewsSection: React.FC = () => {
             </div>
           </div>
 
-          {/* Carousel Dot Indicators */}
+          {/* Carousel Dot Indicators + Mobile Controls */}
           {reviews.length > cardsPerView && (
-            <div className="flex items-center justify-center gap-1.5 mt-4">
-              {Array.from({ length: maxIndex + 1 }).map((_, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => setCurrentIndex(idx)}
-                  aria-label={`Go to slide ${idx + 1}`}
-                  className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                    currentIndex === idx
-                      ? 'w-6 bg-slate-900'
-                      : 'w-1.5 bg-slate-300 hover:bg-slate-400'
-                  }`}
-                />
-              ))}
+            <div className="flex items-center justify-center gap-3 mt-4">
+              <button
+                type="button"
+                onClick={handlePrev}
+                aria-label="Previous reviews"
+                className="sm:hidden w-8 h-8 rounded-full bg-white border border-slate-200 shadow-xs text-slate-700 flex items-center justify-center active:scale-95"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+
+              <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                {Array.from({ length: maxIndex + 1 }).map((_, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setCurrentIndex(idx)}
+                    aria-label={`Go to slide ${idx + 1}`}
+                    className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                      currentIndex === idx
+                        ? 'w-6 bg-slate-900'
+                        : 'w-1.5 bg-slate-300 hover:bg-slate-400'
+                    }`}
+                  />
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleNext}
+                aria-label="Next reviews"
+                className="sm:hidden w-8 h-8 rounded-full bg-white border border-slate-200 shadow-xs text-slate-700 flex items-center justify-center active:scale-95"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
           )}
         </div>
 
         {/* Bottom Banner */}
-        <div className="mt-8 p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 text-center flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="text-left">
+        <div className="mt-7 sm:mt-8 p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
             <h4 className="text-xs sm:text-sm font-bold text-slate-900">
               {language === 'si'
                 ? 'ඔබත් ප්‍රයිම් ලයිෆ් කෙයාර් සේවාව ලබාගත් පවුලක්ද?'
@@ -345,7 +365,7 @@ export const ReviewsSection: React.FC = () => {
                 ? 'நீங்களும் எங்கள் சேவையைப் பெற்ற குடும்பமா?'
                 : 'Are you a family supported by Prime Life Care?'}
             </h4>
-            <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
+            <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 leading-relaxed">
               {language === 'si'
                 ? 'ඔබගේ සැබෑ අත්දැකීම ගූගල් (Google) හරහා සටහන් කර අනෙක් පවුල් වලටත් නිවැරදි තීරණයක් ගැනීමට සහාය වන්න.'
                 : language === 'ta'
@@ -358,7 +378,7 @@ export const ReviewsSection: React.FC = () => {
             href="https://google.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-800 font-bold text-xs border border-slate-300 shadow-2xs flex items-center gap-1.5 shrink-0 transition-all"
+            className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-800 font-bold text-xs border border-slate-300 shadow-2xs flex items-center justify-center gap-1.5 shrink-0 transition-all"
           >
             <MessageSquare className="w-3.5 h-3.5 text-blue-600" />
             <span>

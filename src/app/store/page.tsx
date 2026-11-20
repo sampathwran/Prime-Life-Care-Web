@@ -139,9 +139,9 @@ function StoreContent() {
 
       <main className="flex-1 pb-16">
         {/* Store Hero Banner */}
-        <div className="bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 text-white py-12 sm:py-16 border-b border-slate-800">
+        <div className="bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 text-white py-9 sm:py-16 border-b border-slate-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-3xl space-y-4">
+            <div className="max-w-3xl space-y-3 sm:space-y-4">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/20 text-blue-300 text-xs font-bold uppercase tracking-wider border border-blue-400/30">
                 <ShoppingBag className="w-3.5 h-3.5 text-blue-400" />
                 <span>
@@ -191,8 +191,8 @@ function StoreContent() {
         </div>
 
         {/* Filter & Search Bar */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6">
-          <div className="bg-white rounded-2xl p-4 shadow-lg border border-slate-200/80 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-5 sm:-mt-6">
+          <div className="bg-white rounded-2xl p-3 sm:p-4 shadow-lg border border-slate-200/80 flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4">
             {/* Search Input */}
             <div className="relative w-full md:w-80">
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -205,12 +205,12 @@ function StoreContent() {
                     ? 'උපකරණ සොයන්න (උදා: රෝහල් ඇඳ)...'
                     : 'Search products (e.g. Hospital Bed)...'
                 }
-                className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+                className="w-full pl-9 pr-4 py-2.5 text-sm rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
               />
             </div>
 
             {/* Category Filter Pills */}
-            <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar w-full md:w-auto pb-1 md:pb-0">
               {(() => {
                 const defaultCategories: StoreCategory[] = [
                   { id: 'equipment', nameEn: 'Hospital Beds & ICU', nameSi: 'රෝහල් ඇඳන් සහ මෙට්ට' },
@@ -253,8 +253,8 @@ function StoreContent() {
         </div>
 
         {/* Product Catalog Grid */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 sm:mt-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-7">
             {filteredProducts.map((product) => {
               const title = language === 'si' && product.name.si ? product.name.si : product.name.en;
               const desc = language === 'si' && product.description.si ? product.description.si : product.description.en;
@@ -325,7 +325,7 @@ function StoreContent() {
 
                   {/* 5 Thumbnails Bar */}
                   {product.images.length > 1 && (
-                    <div className="flex gap-2 p-3 bg-slate-50 border-b border-slate-100 overflow-x-auto">
+                    <div className="flex gap-2 p-2.5 sm:p-3 bg-slate-50 border-b border-slate-100 overflow-x-auto no-scrollbar">
                       {product.images.slice(0, 5).map((img, idx) => (
                         <div
                           key={idx}
@@ -458,34 +458,35 @@ function StoreContent() {
       {/* 5-IMAGE PRODUCT DETAIL & ORDER MODAL */}
       {activeModalItem && (
         <div
-          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-start sm:items-center justify-center p-2 sm:p-6 overflow-y-auto animate-in fade-in duration-200"
           onClick={() => setActiveModalItem(null)}
         >
           <div
-            className="bg-white rounded-3xl max-w-3xl w-full overflow-hidden shadow-2xl border border-slate-200 my-auto animate-in zoom-in-95 duration-200"
+            className="bg-white rounded-2xl sm:rounded-3xl max-w-3xl w-full overflow-hidden shadow-2xl border border-slate-200 my-auto max-h-[94vh] flex flex-col animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Topbar */}
-            <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-              <div className="flex items-center gap-2">
-                <span className="px-2.5 py-1 rounded-lg bg-blue-100 text-blue-700 text-xs font-bold uppercase tracking-wider">
+            <div className="p-3.5 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="px-2.5 py-1 rounded-lg bg-blue-100 text-blue-700 text-[11px] sm:text-xs font-bold uppercase tracking-wider truncate">
                   {activeModalItem.brand || 'Paramount Health'}
                 </span>
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-slate-500 whitespace-nowrap">
                   {activePhotoIdx + 1} of {activeModalItem.images.length || 5} Photos
                 </span>
               </div>
 
               <button
                 onClick={() => setActiveModalItem(null)}
-                className="p-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-colors cursor-pointer"
+                aria-label="Close product modal"
+                className="p-2 rounded-full text-slate-500 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer shrink-0"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Modal Body */}
-            <div className="grid md:grid-cols-12 gap-6 p-4 sm:p-6">
+            <div className="grid md:grid-cols-12 gap-5 sm:gap-6 p-4 sm:p-6 overflow-y-auto">
               {/* Left: 5-Photo Multi-Angle Viewer */}
               <div className="md:col-span-6 space-y-3">
                 {/* Large Main Photo with Left/Right Arrows */}
@@ -670,21 +671,21 @@ function StoreContent() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                         <button
                           onClick={() => handleAddToCart(activeModalItem, modalQuantity)}
-                          className="flex-1 py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                          className="w-full py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                         >
-                          <ShoppingBag className="w-4 h-4 text-blue-400" />
+                          <ShoppingBag className="w-4 h-4 text-blue-400 shrink-0" />
                           <span>{language === 'si' ? 'කරත්තයට එක්කරන්න' : 'Add to Cart'}</span>
                         </button>
 
                         <button
                           onClick={() => handleBuyNow(activeModalItem)}
-                          className="flex-1 py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                          className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                         >
                           <span>{language === 'si' ? 'දැන්ම මිලදී ගන්න' : 'Buy Now'}</span>
-                          <ArrowRight className="w-4 h-4" />
+                          <ArrowRight className="w-4 h-4 shrink-0" />
                         </button>
                       </div>
                     </>

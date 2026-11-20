@@ -188,20 +188,20 @@ export const AuthModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
-      <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden relative animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-start sm:items-center justify-center p-2.5 sm:p-4">
+      <div className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden relative my-auto max-h-[94vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
         
         {/* Close Button */}
         <button
           onClick={closeAuthModal}
-          className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 p-1.5 rounded-full hover:bg-slate-100 transition-colors cursor-pointer z-10"
+          className="absolute top-4 right-4 sm:top-5 sm:right-5 text-slate-400 hover:text-slate-700 p-1.5 rounded-full hover:bg-slate-100 transition-colors cursor-pointer z-10"
           aria-label="Close"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Modal Header */}
-        <div className="p-6 sm:p-7 pb-4 bg-gradient-to-b from-blue-50/70 to-white border-b border-slate-100">
+        <div className="p-4 sm:p-7 pb-3.5 sm:pb-4 bg-gradient-to-b from-blue-50/70 to-white border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-2.5 mb-2">
             <div className="w-10 h-10 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center justify-center p-1">
               <img src="/logo.png" alt="Prime Life Care" className="w-full h-full object-contain" />
@@ -247,7 +247,7 @@ export const AuthModal: React.FC = () => {
         </div>
 
         {/* Modal Content */}
-        <div className="p-6 sm:p-7 pt-5 space-y-4 max-h-[75vh] overflow-y-auto">
+        <div className="p-4 sm:p-7 pt-4 sm:pt-5 space-y-4 overflow-y-auto">
           
           {/* Error Banner */}
           {error && (

@@ -131,21 +131,21 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
   };
 
   return (
-    <section id="services" className="py-16 sm:py-20 bg-slate-50 relative overflow-hidden">
+    <section id="services" className="py-12 sm:py-20 bg-slate-50 relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-10">
+        <div className="text-center max-w-3xl mx-auto mb-7 sm:mb-10">
           <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white text-slate-800 text-xs sm:text-sm font-bold tracking-wide uppercase shadow-2xs border border-slate-200">
             <Sparkles className="w-3.5 h-3.5 text-blue-600" />
             <span>{t.nav.services}</span>
           </div>
           
-          <h2 className="text-3xl sm:text-4xl font-black text-slate-900 mt-3.5 tracking-tight">
+          <h2 className="text-2xl sm:text-4xl font-black text-slate-900 mt-3 tracking-tight leading-snug">
             {t.services.heading}
           </h2>
           
-          <p className="text-sm sm:text-base text-slate-600 mt-2.5 leading-relaxed">
+          <p className="text-xs sm:text-base text-slate-600 mt-2 leading-relaxed">
             {t.services.subheading}
           </p>
 
@@ -153,9 +153,9 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
           <div className="mt-4 flex justify-center">
             <button
               onClick={() => setIsCompareModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-800 text-xs font-bold border border-slate-200 shadow-2xs transition-all cursor-pointer"
+              className="inline-flex flex-wrap items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-800 text-xs font-bold border border-slate-200 shadow-2xs transition-all cursor-pointer"
             >
-              <Info className="w-3.5 h-3.5 text-blue-600" />
+              <Info className="w-3.5 h-3.5 text-blue-600 shrink-0" />
               <span>{t.services.compareTiersBtn}</span>
               <span className="text-[10px] bg-slate-100 text-slate-700 font-extrabold px-1.5 py-0.5 rounded">
                 NVQ 4 vs NVQ 5
@@ -164,11 +164,11 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
           </div>
         </div>
 
-        {/* Category Filter Tabs - Including Child Care */}
-        <div className="flex flex-wrap items-center justify-center gap-2 mb-10">
+        {/* Category Filter Tabs - Smooth horizontal scroll strip on mobile, centered wrap on desktop */}
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:justify-center sm:overflow-visible mb-7 sm:mb-10">
           <button
             onClick={() => setSelectedCategory('all')}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+            className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               selectedCategory === 'all'
                 ? 'bg-slate-900 text-white shadow-xs'
                 : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
@@ -178,7 +178,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
           </button>
           <button
             onClick={() => setSelectedCategory('elderly_care')}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+            className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               selectedCategory === 'elderly_care'
                 ? 'bg-slate-900 text-white shadow-xs'
                 : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
@@ -188,7 +188,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
           </button>
           <button
             onClick={() => setSelectedCategory('child_care')}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+            className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               selectedCategory === 'child_care'
                 ? 'bg-slate-900 text-white shadow-xs'
                 : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
@@ -198,7 +198,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
           </button>
           <button
             onClick={() => setSelectedCategory('recovery')}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+            className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               selectedCategory === 'recovery'
                 ? 'bg-slate-900 text-white shadow-xs'
                 : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
@@ -208,7 +208,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
           </button>
           <button
             onClick={() => setSelectedCategory('specialized')}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+            className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               selectedCategory === 'specialized'
                 ? 'bg-slate-900 text-white shadow-xs'
                 : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
@@ -218,7 +218,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
           </button>
           <button
             onClick={() => setSelectedCategory('short_visit')}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+            className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               selectedCategory === 'short_visit'
                 ? 'bg-slate-900 text-white shadow-xs'
                 : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
@@ -229,7 +229,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
         </div>
 
         {/* Dynamic Services Grid with Interactive Qualification Tiers */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {filteredServices.map((service) => {
             const currentTierId: StaffTierId =
               selectedTiers[service.id] ||
@@ -383,18 +383,19 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
 
       {/* COMPREHENSIVE TIER COMPARISON GUIDE MODAL */}
       {isCompareModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-4xl w-full shadow-xl border border-slate-200 overflow-hidden relative animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-4">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-4xl w-full shadow-xl border border-slate-200 overflow-hidden relative animate-in fade-in zoom-in-95 duration-150">
             
             {/* Modal Header */}
-            <div className="bg-slate-900 text-white p-5 sm:p-6 relative">
+            <div className="bg-slate-900 text-white p-4 sm:p-6 pr-12 relative">
               <button
                 onClick={() => setIsCompareModalOpen(false)}
-                className="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-full cursor-pointer"
+                aria-label="Close modal"
+                className="absolute top-4 right-4 sm:top-5 sm:right-5 text-slate-300 hover:text-white p-1.5 rounded-full bg-white/10 hover:bg-white/20 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
-              <h3 className="text-lg sm:text-xl font-bold">
+              <h3 className="text-base sm:text-xl font-bold leading-snug">
                 {t.services.compareModalTitle}
               </h3>
               <p className="text-xs text-slate-300 mt-1 max-w-2xl">
@@ -403,7 +404,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
             </div>
 
             {/* Modal Content - Comparison Cards */}
-            <div className="p-5 sm:p-6 max-h-[70vh] overflow-y-auto space-y-4 bg-slate-50">
+            <div className="p-4 sm:p-6 max-h-[72vh] overflow-y-auto space-y-4 bg-slate-50">
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3.5">
                 {staffTiers.map((tier) => (
                   <div

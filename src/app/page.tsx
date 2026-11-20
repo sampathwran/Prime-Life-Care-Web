@@ -204,23 +204,25 @@ export default function Home() {
       <GoogleOneTapPrompt />
 
       {/* Floating Instant WhatsApp / Hotline Helper Buttons */}
-      <div className="fixed bottom-6 right-6 z-30 flex flex-col gap-2.5">
+      <div className="fixed bottom-4 right-3.5 sm:bottom-6 sm:right-6 z-30 flex flex-col gap-2 sm:gap-2.5">
         <a
           href="https://wa.me/94771234567?text=Hello%20Prime%20Life%20Care,%20I%20would%20like%20to%20inquire%20about%20caregiver%20services%20and%20patient%20equipment."
           target="_blank"
           rel="noopener noreferrer"
           title="Chat on WhatsApp"
-          className="w-13 h-13 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+          aria-label="Chat on WhatsApp"
+          className="w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all"
         >
-          <MessageCircle className="w-7 h-7 fill-white text-emerald-500" />
+          <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7 fill-white text-emerald-500" />
         </a>
 
         <a
           href="tel:+94771234567"
           title="Call 24/7 Hotline"
-          className="w-13 h-13 rounded-full bg-slate-900 hover:bg-slate-800 text-white flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+          aria-label="Call 24/7 Hotline"
+          className="w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-slate-900 hover:bg-slate-800 text-white flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all"
         >
-          <Phone className="w-6 h-6" />
+          <Phone className="w-5 h-5 sm:w-6 sm:h-6" />
         </a>
       </div>
       {/* Slide-over Cart & Express Checkout Drawer */}

@@ -503,7 +503,7 @@ export const EditBookingModal: React.FC<EditBookingModalProps> = ({
         </div>
 
         {/* Tab Navigation Bar */}
-        <div className="flex border-b border-slate-200 bg-slate-50/90 px-4 pt-2 gap-1 overflow-x-auto shrink-0">
+        <div className="flex border-b border-slate-200 bg-slate-50/90 px-3 sm:px-4 pt-2 gap-1 overflow-x-auto no-scrollbar shrink-0">
           <button
             type="button"
             onClick={() => setActiveTab('duration')}

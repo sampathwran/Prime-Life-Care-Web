@@ -56,21 +56,22 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
       {/* Top Hotline Bar - Elegant Dark Slate */}
-      <div className="bg-slate-900 text-slate-200 text-xs sm:text-sm py-2 px-4">
-        <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
-          <div className="flex items-center gap-2">
-            <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span className="font-medium flex items-center gap-1.5 text-slate-300">
-              <Clock className="w-3.5 h-3.5 text-slate-400" />
-              {t.nav.emergency}: <a href={`tel:${t.emergencyPhone}`} className="font-bold text-white hover:underline">{t.emergencyPhone}</a>
+      <div className="bg-slate-900 text-slate-200 text-[11px] sm:text-sm py-1.5 sm:py-2 px-3 sm:px-4">
+        <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-x-3 gap-y-1">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+            <span className="font-medium flex items-center gap-1 text-slate-300 truncate">
+              <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-400 shrink-0" />
+              <span className="hidden xs:inline sm:inline">{t.nav.emergency}:</span>
+              <a href={`tel:${t.emergencyPhone}`} className="font-bold text-white hover:underline whitespace-nowrap">{t.emergencyPhone}</a>
             </span>
           </div>
-          <div className="flex items-center gap-4 text-xs">
+          <div className="flex items-center gap-3 sm:gap-4 text-[11px] sm:text-xs">
             <span className="hidden md:inline-flex items-center gap-1 text-slate-300">
               <Shield className="w-3.5 h-3.5 text-blue-400" />
               {t.hero.stats.verifiedStaff}
             </span>
-            <span className="text-slate-300">
+            <span className="text-slate-300 whitespace-nowrap">
               {t.nav.hotline}: <a href={`tel:${t.phone}`} className="font-semibold text-white hover:underline">{t.phone}</a>
             </span>
           </div>
@@ -78,25 +79,25 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       {/* Main Navbar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16 sm:h-20 gap-2">
           {/* Logo */}
-          <div className="flex items-center gap-3 cursor-pointer select-none" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-            <div className="relative w-12 h-12 rounded-full overflow-hidden bg-white shadow-md shadow-blue-500/10 border border-slate-200/80 p-0.5 shrink-0 transition-transform duration-200 hover:scale-105">
+          <div className="flex items-center gap-2 sm:gap-3 cursor-pointer select-none min-w-0" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+            <div className="relative w-9 h-9 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-white shadow-md shadow-blue-500/10 border border-slate-200/80 p-0.5 shrink-0 transition-transform duration-200 hover:scale-105">
               <img
                 src="/logo.png"
                 alt="Prime Life Care Logo"
                 className="w-full h-full object-contain rounded-full"
               />
             </div>
-            <div>
-              <div className="flex items-center gap-1.5 leading-none">
-                <span className="text-xl sm:text-2xl font-black tracking-tight text-slate-900">PRIME LIFE</span>
-                <span className="text-xl sm:text-2xl font-black text-blue-600">CARE</span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1 sm:gap-1.5 leading-none whitespace-nowrap">
+                <span className="text-base sm:text-xl md:text-2xl font-black tracking-tight text-slate-900">PRIME LIFE</span>
+                <span className="text-base sm:text-xl md:text-2xl font-black text-blue-600">CARE</span>
               </div>
               <div className="text-[10px] sm:text-[11px] text-slate-500 font-medium leading-tight hidden sm:block mt-0.5">
                 <span>{language === 'si' ? 'කරුණාවන්ත, සහතිකලත්' : language === 'ta' ? 'அன்பான, சான்றளிக்கப்பட்ட' : 'Compassionate, Certified'}</span>
-                <span className="block">{language === 'si' ? 'වැඩිහිටි සහ රෝගී සාත්තු සේවය' : language === 'ta' ? 'முதியோர் සහ நோயாளி பராமரிப்பு' : 'Elderly & Patient Care in Sri Lanka'}</span>
+                <span className="block">{language === 'si' ? 'වැඩිහිටි සහ රෝගී සාත්තු සේවය' : language === 'ta' ? 'முதியோர் மற்றும் நோயாளி பராமரிப்பு' : 'Elderly & Patient Care in Sri Lanka'}</span>
               </div>
             </div>
           </div>
@@ -219,11 +220,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </div>
 
-          {/* Mobile Menu & Auth Quick Button */}
-          <div className="flex items-center gap-2 sm:hidden">
+          {/* Mobile & Tablet Menu & Quick Actions */}
+          <div className="flex items-center gap-1.5 sm:gap-2 lg:hidden shrink-0">
             <Link
               href="/booking"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-xl text-xs font-bold shadow-xs active:scale-95"
+              className="sm:hidden bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-2 rounded-xl text-[11px] font-bold shadow-xs active:scale-95 whitespace-nowrap"
             >
               {t.nav.bookNow}
             </Link>
@@ -231,8 +232,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             {user ? (
               <Link
                 href="/profile"
-                className="relative w-8 h-8 rounded-full border border-slate-300 flex items-center justify-center bg-blue-600 text-white text-xs font-bold shadow-xs"
+                className="sm:hidden relative w-9 h-9 rounded-full border border-slate-300 flex items-center justify-center bg-blue-600 text-white text-xs font-bold shadow-xs shrink-0"
                 title={user.name}
+                aria-label="Open Profile"
               >
                 <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center">
                   {user.photoURL ? (
@@ -253,7 +255,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             ) : (
               <button
                 onClick={onOpenAuth}
-                className="p-1.5 text-slate-700 rounded-xl border border-slate-200 hover:bg-slate-100"
+                aria-label="Sign In"
+                className="sm:hidden w-9 h-9 flex items-center justify-center text-slate-700 rounded-xl border border-slate-200 hover:bg-slate-100 shrink-0"
               >
                 <LogIn className="w-4 h-4" />
               </button>
@@ -261,24 +264,25 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-1.5 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100"
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              className="w-9 h-9 flex items-center justify-center text-slate-700 hover:text-slate-900 rounded-xl border border-slate-200/80 bg-slate-50 hover:bg-slate-100 shrink-0 cursor-pointer"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile Drawer */}
+      {/* Mobile & Tablet Drawer */}
       {mobileMenuOpen && (
-        <div className="sm:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-6 space-y-4">
+        <div className="lg:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-6 space-y-4 shadow-xl max-h-[calc(100vh-5rem)] overflow-y-auto">
           {/* Mobile Language Selector */}
-          <div className="bg-slate-100 p-1.5 rounded-2xl flex items-center gap-1 border border-slate-200">
+          <div className="sm:hidden bg-slate-100 p-1.5 rounded-2xl flex items-center gap-1 border border-slate-200">
             {languageOptions.map((opt) => (
               <button
                 key={opt.id}
                 onClick={() => setLanguage(opt.id)}
-                className={`flex-1 py-1.5 px-2 rounded-xl text-xs flex items-center justify-center gap-1 transition-all ${
+                className={`flex-1 py-2 px-2 rounded-xl text-xs flex items-center justify-center gap-1 transition-all ${
                   language === opt.id
                     ? 'bg-blue-600 text-white font-bold shadow-xs'
                     : 'text-slate-700 font-semibold hover:bg-slate-200'
@@ -292,29 +296,29 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {user && (
             <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5 min-w-0">
                   {user.photoURL ? (
                     <img
                       src={user.photoURL}
                       alt={user.name}
-                      className="w-9 h-9 rounded-full object-cover border border-slate-300 shadow-2xs"
+                      className="w-9 h-9 rounded-full object-cover border border-slate-300 shadow-2xs shrink-0"
                       referrerPolicy="no-referrer"
                     />
                   ) : (
-                    <div className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold">
+                    <div className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold shrink-0">
                       {user.name.charAt(0)}
                     </div>
                   )}
-                  <div>
-                    <p className="text-xs font-bold text-slate-900">{user.name}</p>
-                    <p className="text-[11px] text-slate-500">{user.email}</p>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-slate-900 truncate">{user.name}</p>
+                    <p className="text-[11px] text-slate-500 truncate">{user.email}</p>
                   </div>
                 </div>
                 <Link
                   href="/profile"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-xs cursor-pointer"
+                  className="px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-xs cursor-pointer shrink-0"
                 >
                   {t.nav.myProfile}
                 </Link>
@@ -324,7 +328,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <Link
                 href="/profile?tab=cart"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-800 hover:bg-blue-50 transition-colors"
+                className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-800 hover:bg-blue-50 transition-colors"
               >
                 <div className="flex items-center gap-2">
                   <ShoppingCart className="w-4 h-4 text-blue-600" />
@@ -341,13 +345,13 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           )}
 
-          <div className="flex flex-col gap-2 font-semibold text-slate-800 text-sm">
+          <div className="flex flex-col gap-1 font-semibold text-slate-800 text-sm">
             <button
               onClick={() => { setMobileMenuOpen(false); onNavigateToStore(); }}
-              className="text-left py-2.5 border-b border-slate-100 font-bold text-slate-900 flex items-center gap-2"
+              className="text-left py-3 px-2 rounded-xl hover:bg-blue-50/70 border-b border-slate-100 font-bold text-slate-900 flex items-center gap-2.5"
             >
-              <div className="w-5 h-5 rounded-md bg-blue-600 text-white flex items-center justify-center">
-                <ShoppingBag className="w-3 h-3 text-white" />
+              <div className="w-6 h-6 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0">
+                <ShoppingBag className="w-3.5 h-3.5 text-white" />
               </div>
               <span className="animate-sway-x text-blue-900">{t.nav.store}</span>
               <span className="relative flex h-2 w-2 ml-1">
@@ -355,17 +359,33 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
             </button>
+            {onNavigateToServices && (
+              <button
+                onClick={() => { setMobileMenuOpen(false); onNavigateToServices(); }}
+                className="text-left py-2.5 px-2 rounded-xl hover:bg-slate-50 border-b border-slate-100"
+              >
+                {t.nav.services}
+              </button>
+            )}
+            {onNavigateToTrust && (
+              <button
+                onClick={() => { setMobileMenuOpen(false); onNavigateToTrust(); }}
+                className="text-left py-2.5 px-2 rounded-xl hover:bg-slate-50 border-b border-slate-100"
+              >
+                {t.nav.whyUs}
+              </button>
+            )}
             <button
               onClick={() => { setMobileMenuOpen(false); onNavigateToTracker(); }}
-              className="text-left py-2 border-b border-slate-100"
+              className="text-left py-2.5 px-2 rounded-xl hover:bg-slate-50 border-b border-slate-100"
             >
               {t.nav.track}
             </button>
             <a
               href={`tel:${t.emergencyPhone}`}
-              className="flex items-center gap-2 text-blue-600 py-2 font-bold"
+              className="flex items-center gap-2 text-blue-600 py-3 px-2 font-bold"
             >
-              <Phone className="w-4 h-4" />
+              <Phone className="w-4 h-4 shrink-0" />
               <span>{t.nav.emergency}: {t.emergencyPhone}</span>
             </a>
           </div>

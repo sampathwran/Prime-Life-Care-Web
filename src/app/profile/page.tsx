@@ -84,7 +84,8 @@ export default function ProfilePage() {
     cartTotal,
     cartRegularTotal,
     cartSavings,
-    cartCount
+    cartCount,
+    openCartDrawer
   } = useCart();
   const router = useRouter();
 
@@ -818,23 +819,23 @@ export default function ProfilePage() {
           <div className="grid lg:grid-cols-12 gap-6 lg:gap-8 items-start">
             
             {/* LEFT COLUMN: User Identity & Navigation Sidebar (4 Columns) */}
-            <div className="lg:col-span-4 space-y-6">
+            <div className="lg:col-span-4 space-y-4 sm:space-y-6">
               
               {/* Profile Card */}
-              <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs">
+              <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200 shadow-xs">
                 
                 {/* Avatar with Camera Uploader */}
-                <div className="flex flex-col items-center text-center pb-5 border-b border-slate-100">
-                  <div className="relative group mb-3">
+                <div className="flex flex-row sm:flex-col items-center sm:text-center gap-4 sm:gap-0 pb-4 sm:pb-5 border-b border-slate-100">
+                  <div className="relative group sm:mb-3 shrink-0">
                     {photoURL || user.photoURL ? (
                       <img
                         src={photoURL || user.photoURL}
                         alt={user.name}
-                        className="w-24 h-24 rounded-3xl object-cover border-2 border-slate-100 shadow-md group-hover:opacity-90 transition-opacity"
+                        className="w-16 h-16 sm:w-24 sm:h-24 rounded-2xl sm:rounded-3xl object-cover border-2 border-slate-100 shadow-md group-hover:opacity-90 transition-opacity"
                         referrerPolicy="no-referrer"
                       />
                     ) : (
-                      <div className="w-24 h-24 rounded-3xl bg-blue-600 text-white font-black text-3xl flex items-center justify-center shadow-md">
+                      <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-2xl sm:rounded-3xl bg-blue-600 text-white font-black text-2xl sm:text-3xl flex items-center justify-center shadow-md">
                         {user.name.charAt(0) || 'U'}
                       </div>
                     )}
@@ -843,10 +844,10 @@ export default function ProfilePage() {
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="absolute -bottom-2 -right-2 p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-md border-2 border-white transition-transform hover:scale-110 cursor-pointer"
+                      className="absolute -bottom-1.5 -right-1.5 sm:-bottom-2 sm:-right-2 p-1.5 sm:p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl sm:rounded-2xl shadow-md border-2 border-white transition-transform hover:scale-110 cursor-pointer"
                       title={t.changePhoto}
                     >
-                      <Camera className="w-4 h-4" />
+                      <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </button>
                     <input
                       type="file"
@@ -857,44 +858,173 @@ export default function ProfilePage() {
                     />
                   </div>
 
-                  <h3 className="text-lg font-black text-slate-900 tracking-tight">{user.name}</h3>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold">
-                      {t.verifiedMember}
-                    </span>
-                  </div>
+                  <div className="min-w-0 flex-1 sm:flex-none text-left sm:text-center">
+                    <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight truncate">{user.name}</h3>
+                    <div className="flex items-center sm:justify-center gap-1.5 mt-1">
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] sm:text-[11px] font-bold">
+                        {t.verifiedMember}
+                      </span>
+                    </div>
 
-                  <p className="text-xs text-slate-500 mt-2 flex flex-col gap-0.5">
-                    <span>{user.email}</span>
-                    {user.phone && <span className="font-semibold text-slate-800">{user.phone}</span>}
-                  </p>
+                    <p className="text-xs text-slate-500 mt-1.5 sm:mt-2 flex flex-col gap-0.5 truncate">
+                      <span className="truncate">{user.email}</span>
+                      {user.phone && <span className="font-semibold text-slate-800">{user.phone}</span>}
+                    </p>
 
-                  <div className="text-[11px] text-slate-400 mt-2 flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5 text-blue-600" />
-                    <span>{user.city ? `${user.city}, ` : ''}{user.district || 'Colombo'}</span>
+                    <div className="text-[11px] text-slate-400 mt-1 sm:mt-2 flex items-center sm:justify-center gap-1">
+                      <MapPin className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                      <span className="truncate">{user.city ? `${user.city}, ` : ''}{user.district || 'Colombo'}</span>
+                    </div>
                   </div>
                 </div>
 
                 {/* Quick Stats Grid */}
-                <div className="grid grid-cols-2 gap-2.5 pt-4 text-center">
-                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                <div className="grid grid-cols-2 gap-2.5 pt-3.5 sm:pt-4 text-center">
+                  <div className="p-2.5 sm:p-3 rounded-2xl bg-slate-50 border border-slate-100">
                     <span className="text-[10px] uppercase font-bold text-slate-400 block">{t.activeDutiesStat}</span>
-                    <span className="text-xl font-black text-blue-600 mt-0.5 block">
+                    <span className="text-lg sm:text-xl font-black text-blue-600 mt-0.5 block">
                       {bookings.filter(b => b.status === 'in_progress' || b.status === 'caregiver_assigned').length}
                     </span>
                   </div>
 
-                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                  <div className="p-2.5 sm:p-3 rounded-2xl bg-slate-50 border border-slate-100">
                     <span className="text-[10px] uppercase font-bold text-slate-400 block">{t.savedPatientsStat}</span>
-                    <span className="text-xl font-black text-slate-800 mt-0.5 block">
+                    <span className="text-lg sm:text-xl font-black text-slate-800 mt-0.5 block">
                       {user.savedPatients?.length || 0}
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Sidebar Navigation Menu */}
-              <div className="bg-white rounded-3xl p-3 border border-slate-200 shadow-xs space-y-1">
+              {/* Mobile & Tablet Horizontal Scrollable Tab Bar (Instant Tab Switching without scrolling!) */}
+              <div className="lg:hidden -mx-4 px-4 overflow-x-auto no-scrollbar">
+                <div className="flex items-center gap-2 pb-1 w-max">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('bookings')}
+                    className={`px-3.5 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 whitespace-nowrap border transition-all ${
+                      activeTab === 'bookings'
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                        : 'bg-white text-slate-700 border-slate-200'
+                    }`}
+                  >
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>{language === 'si' ? 'සේවා' : 'Bookings'} ({bookings.length})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('cart')}
+                    className={`px-3.5 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 whitespace-nowrap border transition-all ${
+                      activeTab === 'cart'
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                        : 'bg-white text-slate-700 border-slate-200'
+                    }`}
+                  >
+                    <ShoppingCart className="w-3.5 h-3.5" />
+                    <span>{language === 'si' ? 'කරත්තය' : 'Cart'} ({cartCount})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('orders')}
+                    className={`px-3.5 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 whitespace-nowrap border transition-all ${
+                      activeTab === 'orders'
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                        : 'bg-white text-slate-700 border-slate-200'
+                    }`}
+                  >
+                    <ShoppingBag className="w-3.5 h-3.5" />
+                    <span>{language === 'si' ? 'ඇණවුම්' : 'Orders'} ({orders.length})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('saved')}
+                    className={`px-3.5 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 whitespace-nowrap border transition-all ${
+                      activeTab === 'saved'
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                        : 'bg-white text-slate-700 border-slate-200'
+                    }`}
+                  >
+                    <Heart className="w-3.5 h-3.5" />
+                    <span>{language === 'si' ? 'සුරැකි' : 'Saved'} ({saved.length})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('family')}
+                    className={`px-3.5 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 whitespace-nowrap border transition-all ${
+                      activeTab === 'family'
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                        : 'bg-white text-slate-700 border-slate-200'
+                    }`}
+                  >
+                    <Users className="w-3.5 h-3.5" />
+                    <span>{language === 'si' ? 'පවුල' : 'Family'} ({user.savedPatients?.length || 0})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('details')}
+                    className={`px-3.5 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 whitespace-nowrap border transition-all ${
+                      activeTab === 'details'
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                        : 'bg-white text-slate-700 border-slate-200'
+                    }`}
+                  >
+                    <User className="w-3.5 h-3.5" />
+                    <span>{language === 'si' ? 'විස්තර' : 'Profile'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('payments')}
+                    className={`px-3.5 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 whitespace-nowrap border transition-all ${
+                      activeTab === 'payments'
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                        : 'bg-white text-slate-700 border-slate-200'
+                    }`}
+                  >
+                    <CreditCard className="w-3.5 h-3.5" />
+                    <span>{language === 'si' ? 'බිල්පත්' : 'Invoices'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('notifications')}
+                    className={`px-3.5 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 whitespace-nowrap border transition-all ${
+                      activeTab === 'notifications'
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                        : 'bg-white text-slate-700 border-slate-200'
+                    }`}
+                  >
+                    <Bell className="w-3.5 h-3.5" />
+                    <span>{language === 'si' ? 'දැනුම්දීම්' : 'Alerts'}</span>
+                    {unreadNotificationsCount > 0 && (
+                      <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-red-500 text-white">
+                        {unreadNotificationsCount}
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('emergency')}
+                    className={`px-3.5 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 whitespace-nowrap border transition-all ${
+                      activeTab === 'emergency'
+                        ? 'bg-red-600 text-white border-red-600 shadow-sm'
+                        : 'bg-red-50 text-red-600 border-red-200'
+                    }`}
+                  >
+                    <Heart className="w-3.5 h-3.5 fill-current" />
+                    <span>1990 / SOS</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowSignOutModal(true)}
+                    className="px-3.5 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 whitespace-nowrap border border-slate-200 bg-white text-slate-500"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>{language === 'si' ? 'ඉවත් වන්න' : 'Sign Out'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Desktop Sidebar Navigation Menu */}
+              <div className="hidden lg:block bg-white rounded-3xl p-3 border border-slate-200 shadow-xs space-y-1">
                 
                 {/* 1. Care Bookings */}
                 <button
@@ -1093,8 +1223,8 @@ export default function ProfilePage() {
 
               </div>
 
-              {/* 24/7 Hotline Support Card */}
-              <div className="p-5 rounded-3xl bg-gradient-to-br from-blue-900 to-indigo-950 text-white space-y-3 shadow-md">
+              {/* 24/7 Hotline Support Card (Desktop Sidebar) */}
+              <div className="hidden lg:block p-5 rounded-3xl bg-gradient-to-br from-blue-900 to-indigo-950 text-white space-y-3 shadow-md">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center font-bold">
                     <PhoneCall className="w-4 h-4 text-white" />
@@ -1215,8 +1345,8 @@ export default function ProfilePage() {
                         </div>
 
                         {/* Step Progress Bar (Real-time Duty Stages) */}
-                        <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-100">
-                          <div className="flex items-center justify-between text-[11px] font-bold text-slate-600 mb-2">
+                        <div className="p-3 sm:p-4 rounded-2xl bg-slate-50/80 border border-slate-100">
+                          <div className="grid grid-cols-4 gap-1 text-[9.5px] sm:text-[11px] font-bold text-slate-600 mb-2 leading-tight text-center">
                             <span className="text-blue-600">{t.step1}</span>
                             <span className={b.status !== 'pending_review' ? 'text-blue-600' : 'text-slate-400'}>
                               {t.step2}
@@ -1823,15 +1953,15 @@ export default function ProfilePage() {
               {/* TAB 4: MEDICAL EQUIPMENT ORDERS WITH LIVE TRACKING */}
               {activeTab === 'orders' && (
                 <div className="space-y-6">
-                  <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs flex items-center justify-between">
+                  <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
-                      <h2 className="text-lg font-black text-slate-900">{t.ordersTitle}</h2>
+                      <h2 className="text-base sm:text-lg font-black text-slate-900">{t.ordersTitle}</h2>
                       <p className="text-xs text-slate-500 mt-0.5">{t.ordersSub}</p>
                     </div>
 
                     <Link
                       href="/store"
-                      className="px-4 py-2 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
+                      className="px-4 py-2.5 sm:py-2 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm shrink-0"
                     >
                       <ShoppingBag className="w-4 h-4" />
                       <span>{t.goToStoreBtn}</span>
@@ -1934,9 +2064,9 @@ export default function ProfilePage() {
               {/* TAB 5: MY CART & EXPRESS CHECKOUT */}
               {activeTab === 'cart' && (
                 <div className="space-y-6">
-                  <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs flex items-center justify-between">
+                  <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
-                      <h2 className="text-lg font-black text-slate-900">
+                      <h2 className="text-base sm:text-lg font-black text-slate-900">
                         {language === 'si' ? 'මගේ කරත්තය (Shopping Cart)' : 'My Shopping Cart'}
                       </h2>
                       <p className="text-xs text-slate-500 mt-0.5">
@@ -1946,7 +2076,7 @@ export default function ProfilePage() {
 
                     <Link
                       href="/store"
-                      className="px-4 py-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all flex items-center gap-1.5"
+                      className="px-4 py-2.5 sm:py-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shrink-0"
                     >
                       <Plus className="w-4 h-4 text-blue-600" />
                       <span>{language === 'si' ? 'භාණ්ඩ එක්කරන්න' : 'Add More Products'}</span>
@@ -2076,13 +2206,8 @@ export default function ProfilePage() {
                           </div>
                         ) : (
                           <button
-                            onClick={() => {
-                              const event = new CustomEvent('open-cart-checkout');
-                              window.dispatchEvent(event);
-                              // Also open drawer
-                              const { openCartDrawer } = (window as any);
-                            }}
-                            className="px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                            onClick={() => openCartDrawer()}
+                            className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                           >
                             <ShoppingBag className="w-4 h-4" />
                             <span>{language === 'si' ? 'ඇණවුම සම්පූර්ණ කරන්න (Checkout)' : 'Proceed to Checkout'}</span>
@@ -2098,9 +2223,9 @@ export default function ProfilePage() {
               {/* TAB 6: SAVED WISHLIST ITEMS */}
               {activeTab === 'saved' && (
                 <div className="space-y-6">
-                  <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs flex items-center justify-between">
+                  <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
-                      <h2 className="text-lg font-black text-slate-900">
+                      <h2 className="text-base sm:text-lg font-black text-slate-900">
                         {language === 'si' ? 'සුරැකි භාණ්ඩ (Saved Wishlist)' : 'Saved Wishlist Items'}
                       </h2>
                       <p className="text-xs text-slate-500 mt-0.5">
@@ -2110,7 +2235,7 @@ export default function ProfilePage() {
 
                     <Link
                       href="/store"
-                      className="px-4 py-2 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
+                      className="px-4 py-2.5 sm:py-2 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm shrink-0"
                     >
                       <ShoppingBag className="w-4 h-4" />
                       <span>{t.goToStoreBtn}</span>
@@ -2192,8 +2317,28 @@ export default function ProfilePage() {
                     <p className="text-xs text-slate-500 mt-0.5">{t.invoicesSub}</p>
                   </div>
 
-                  <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs">
-                    <table className="w-full text-left text-xs">
+                  {/* Mobile Invoice Cards */}
+                  <div className="sm:hidden space-y-3">
+                    {payments.map((p) => (
+                      <div key={p.id} className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-2 text-xs">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-black text-slate-900">{p.invoiceNumber}</span>
+                          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            {t.statusPaid}
+                          </span>
+                        </div>
+                        <p className="text-slate-700 font-medium leading-snug">{p.serviceName}</p>
+                        <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                          <span className="capitalize">{p.paymentMethod.replace('_', ' ')} • {p.paymentDate}</span>
+                          <span className="font-black text-blue-700 text-sm">LKR {p.amountLKR.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Desktop Invoices Table */}
+                  <div className="hidden sm:block bg-white rounded-3xl border border-slate-200 overflow-x-auto shadow-xs">
+                    <table className="w-full text-left text-xs min-w-[600px]">
                       <thead className="bg-slate-50 border-b border-slate-100 text-slate-400 font-bold uppercase text-[10px]">
                         <tr>
                           <th className="py-4 px-4">{t.colInvoice}</th>
@@ -2286,52 +2431,52 @@ export default function ProfilePage() {
                     <p className="text-xs text-slate-500 mt-0.5">{t.emergencySub}</p>
                   </div>
 
-                  <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="grid sm:grid-cols-2 gap-3.5 sm:gap-4">
                     {/* 1990 Suwa Seriya */}
-                    <div className="p-5 rounded-3xl bg-red-50 border border-red-200 flex items-center justify-between">
-                      <div className="flex items-center gap-3.5">
-                        <div className="w-14 h-14 rounded-2xl bg-red-600 text-white flex items-center justify-center font-black text-xl shadow-md">
+                    <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-red-50 border border-red-200 flex flex-col xs:flex-row sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-red-600 text-white flex items-center justify-center font-black text-lg sm:text-xl shadow-md shrink-0">
                           1990
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <h4 className="font-black text-slate-900 text-sm">{t.card1990Title}</h4>
                           <p className="text-xs text-slate-600">{t.card1990Sub}</p>
                         </div>
                       </div>
                       <a
                         href="tel:1990"
-                        className="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-colors shadow-xs"
+                        className="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-colors shadow-xs text-center shrink-0"
                       >
                         {t.call1990Btn}
                       </a>
                     </div>
 
                     {/* Prime Life Care 24/7 Hotline */}
-                    <div className="p-5 rounded-3xl bg-blue-50 border border-blue-200 flex items-center justify-between">
-                      <div className="flex items-center gap-3.5">
-                        <div className="w-14 h-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-bold shadow-md">
-                          <Phone className="w-6 h-6" />
+                    <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-blue-50 border border-blue-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-bold shadow-md shrink-0">
+                          <Phone className="w-5 h-5 sm:w-6 sm:h-6" />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <h4 className="font-black text-slate-900 text-sm">{t.cardHotlineTitle}</h4>
                           <p className="text-xs text-slate-600">{t.cardHotlineSub}</p>
                         </div>
                       </div>
                       <a
                         href="tel:+94771234567"
-                        className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors shadow-xs"
+                        className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors shadow-xs text-center shrink-0"
                       >
                         077 123 4567
                       </a>
                     </div>
 
                     {/* WhatsApp Doctor Support */}
-                    <div className="p-5 rounded-3xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
-                      <div className="flex items-center gap-3.5">
-                        <div className="w-14 h-14 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-bold shadow-md">
-                          <MessageCircle className="w-6 h-6" />
+                    <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-emerald-50 border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-bold shadow-md shrink-0">
+                          <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <h4 className="font-black text-slate-900 text-sm">{t.cardDoctorTitle}</h4>
                           <p className="text-xs text-slate-600">{t.cardDoctorSub}</p>
                         </div>
@@ -2340,26 +2485,26 @@ export default function ProfilePage() {
                         href="https://wa.me/94771234567"
                         target="_blank"
                         rel="noreferrer"
-                        className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors shadow-xs"
+                        className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors shadow-xs text-center shrink-0"
                       >
                         WhatsApp
                       </a>
                     </div>
 
                     {/* National Hospital Colombo */}
-                    <div className="p-5 rounded-3xl bg-slate-100 border border-slate-200 flex items-center justify-between">
-                      <div className="flex items-center gap-3.5">
-                        <div className="w-14 h-14 rounded-2xl bg-slate-800 text-white flex items-center justify-center font-bold shadow-md">
-                          <Shield className="w-6 h-6" />
+                    <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-slate-100 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-slate-800 text-white flex items-center justify-center font-bold shadow-md shrink-0">
+                          <Shield className="w-5 h-5 sm:w-6 sm:h-6" />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <h4 className="font-black text-slate-900 text-sm">{t.cardHospitalTitle}</h4>
                           <p className="text-xs text-slate-600">{t.cardHospitalSub}</p>
                         </div>
                       </div>
                       <a
                         href="tel:0112691111"
-                        className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold transition-colors shadow-xs"
+                        className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold transition-colors shadow-xs text-center shrink-0"
                       >
                         011 269 1111
                       </a>

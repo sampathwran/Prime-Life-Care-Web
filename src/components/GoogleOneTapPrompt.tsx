@@ -75,8 +75,8 @@ export const GoogleOneTapPrompt: React.FC = () => {
   }[language];
 
   return (
-    <div className="fixed top-24 right-4 sm:right-6 z-50 max-w-sm w-[calc(100vw-2rem)] sm:w-96 animate-in slide-in-from-top-6 fade-in duration-300">
-      <div className="bg-white rounded-3xl shadow-2xl border-2 border-blue-500/20 p-5 relative overflow-hidden backdrop-blur-md">
+    <div className="fixed bottom-4 left-3 right-3 sm:bottom-auto sm:top-24 sm:left-auto sm:right-6 z-50 sm:max-w-sm sm:w-96 animate-in slide-in-from-bottom-6 sm:slide-in-from-top-6 fade-in duration-300">
+      <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl border-2 border-blue-500/20 p-4 sm:p-5 relative overflow-hidden backdrop-blur-md">
         {/* Subtle decorative top bar */}
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-500 via-emerald-500 to-indigo-500" />
 
@@ -131,9 +131,9 @@ export const GoogleOneTapPrompt: React.FC = () => {
         </button>
 
         {/* Micro-footer note */}
-        <div className="mt-2.5 flex items-center justify-between text-[10px] text-slate-400 font-medium px-1">
+        <div className="mt-2.5 flex flex-wrap items-center justify-between gap-1 text-[10px] text-slate-400 font-medium px-1">
           <span className="flex items-center gap-1">
-            <ShieldCheck className="w-3 h-3 text-emerald-500" />
+            <ShieldCheck className="w-3 h-3 text-emerald-500 shrink-0" />
             <span>Secure 256-bit OAuth</span>
           </span>
           <span>{content.note}</span>

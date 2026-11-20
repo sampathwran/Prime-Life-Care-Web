@@ -101,16 +101,16 @@ export const BookingTracker: React.FC<BookingTrackerProps> = ({ bookings }) => {
   };
 
   return (
-    <section id="tracker" className="py-16 bg-gradient-to-b from-white to-slate-50 border-t border-slate-200">
+    <section id="tracker" className="py-12 sm:py-16 bg-gradient-to-b from-white to-slate-50 border-t border-slate-200">
       <div className="max-w-4xl mx-auto px-4 sm:px-6">
-        <div className="text-center mb-10">
+        <div className="text-center mb-7 sm:mb-10">
           <span className="text-xs sm:text-sm font-bold tracking-widest uppercase text-slate-700 bg-slate-100 px-3.5 py-1.5 rounded-full border border-slate-200">
             {t.nav.track}
           </span>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-3">
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-3 leading-snug">
             {t.tracker.heading}
           </h2>
-          <p className="text-sm text-slate-600 mt-2">
+          <p className="text-xs sm:text-sm text-slate-600 mt-2">
             {t.tracker.subheading}
           </p>
         </div>
@@ -148,21 +148,21 @@ export const BookingTracker: React.FC<BookingTrackerProps> = ({ bookings }) => {
         {searched && (
           <div>
             {result ? (
-              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-md relative overflow-hidden">
-                <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-slate-100">
+              <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-8 border border-slate-200 shadow-md relative overflow-hidden">
+                <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4 pb-5 sm:pb-6 border-b border-slate-100">
                   <div>
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t.tracker.bookingCodeLabel}</span>
-                    <h3 className="text-2xl font-black text-slate-900">{result.bookingCode}</h3>
+                    <h3 className="text-xl sm:text-2xl font-black text-slate-900">{result.bookingCode}</h3>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className={`px-4 py-2 rounded-xl border text-xs font-bold ${getStatusInfo(result.status).color}`}>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl border text-xs font-bold ${getStatusInfo(result.status).color}`}>
                       {getStatusInfo(result.status).label}
                     </div>
                     {result.status !== 'completed' && (
                       <button
                         type="button"
                         onClick={() => setIsEditModalOpen(true)}
-                        className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 text-xs font-bold border border-slate-200 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                        className="px-3.5 py-1.5 sm:py-2 rounded-xl bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 text-xs font-bold border border-slate-200 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
                       >
                         <Edit3 className="w-3.5 h-3.5 text-blue-600" />
                         <span>Edit / Cancel</span>
@@ -172,7 +172,7 @@ export const BookingTracker: React.FC<BookingTrackerProps> = ({ bookings }) => {
                 </div>
 
                 {/* Status Timeline */}
-                <div className="grid grid-cols-4 gap-2 my-8">
+                <div className="grid grid-cols-4 gap-1 sm:gap-2 my-6 sm:my-8">
                   {[
                     { title: t.tracker.stepRequested, step: 1 },
                     { title: t.tracker.stepMatched, step: 2 },
@@ -182,15 +182,15 @@ export const BookingTracker: React.FC<BookingTrackerProps> = ({ bookings }) => {
                     const currentStepNum = getStatusInfo(result.status).step;
                     const isDone = s.step <= currentStepNum;
                     return (
-                      <div key={s.step} className="text-center">
+                      <div key={s.step} className="text-center px-0.5">
                         <div
-                          className={`w-8 h-8 rounded-full mx-auto flex items-center justify-center text-xs font-bold transition-all ${
+                          className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full mx-auto flex items-center justify-center text-xs font-bold transition-all ${
                             isDone ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-400'
                           }`}
                         >
-                          {isDone ? <CheckCircle className="w-4 h-4" /> : s.step}
+                          {isDone ? <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : s.step}
                         </div>
-                        <p className={`text-[11px] font-semibold mt-2 ${isDone ? 'text-slate-900' : 'text-slate-400'}`}>
+                        <p className={`text-[10px] sm:text-[11px] font-semibold mt-1.5 sm:mt-2 leading-tight ${isDone ? 'text-slate-900' : 'text-slate-400'}`}>
                           {s.title}
                         </p>
                       </div>
@@ -335,11 +335,11 @@ export const BookingTracker: React.FC<BookingTrackerProps> = ({ bookings }) => {
                 )}
 
                 {/* Duty Timeline & Days Remaining Progress Bar */}
-                <div className="mb-6 p-4 rounded-2xl bg-slate-50 border border-slate-200">
-                  <div className="flex items-center justify-between text-xs font-bold mb-2">
+                <div className="mb-6 p-3.5 sm:p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                  <div className="flex flex-wrap items-center justify-between gap-1.5 text-xs font-bold mb-2">
                     <span className="text-slate-700 flex items-center gap-1.5">
-                      <Calendar className="w-4 h-4 text-blue-600" />
-                      Care Contract: {result.durationDays} Days ({result.shiftType === '24h_full' ? '24 Hours Live-In' : '12-Hour Shift'})
+                      <Calendar className="w-4 h-4 text-blue-600 shrink-0" />
+                      <span>Care Contract: {result.durationDays} Days ({result.shiftType === '24h_full' ? '24 Hours Live-In' : '12-Hour Shift'})</span>
                     </span>
                     <span className="text-blue-700 font-extrabold">
                       {Math.max(1, result.durationDays - (result.completedShiftsCount || 0))} Days Remaining
@@ -353,7 +353,7 @@ export const BookingTracker: React.FC<BookingTrackerProps> = ({ bookings }) => {
                       }}
                     />
                   </div>
-                  <div className="flex justify-between text-[11px] text-slate-500 mt-1.5">
+                  <div className="flex flex-wrap justify-between gap-1 text-[11px] text-slate-500 mt-1.5">
                     <span>Started: {result.startDate}</span>
                     <span>Completed: {result.completedShiftsCount || 1} of {result.durationDays} Shifts</span>
                   </div>
@@ -467,7 +467,7 @@ export const BookingTracker: React.FC<BookingTrackerProps> = ({ bookings }) => {
                         const outTime = rawOut.includes('T') ? rawOut.split('T')[1].substring(0, 5) : (rawOut || 'Active');
                         return (
                           <div key={idx} className="p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs">
-                            <div className="flex items-center justify-between mb-1">
+                            <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
                               <span className="font-bold text-slate-800">Shift #{idx + 1} • {dateStr}</span>
                               <span className="font-semibold text-blue-600">
                                 In: {inTime} | Out: {outTime} ({shift.hours || '12'}h)
@@ -490,16 +490,16 @@ export const BookingTracker: React.FC<BookingTrackerProps> = ({ bookings }) => {
                 )}
 
                 {/* Extension & Clinical Report Quick Action Buttons */}
-                <div className="mt-6 pt-5 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex flex-wrap items-center gap-2.5">
+                <div className="mt-6 pt-5 border-t border-slate-200 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-between gap-3">
+                  <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2.5">
                     {/* Extension Request Button */}
                     <a
                       href={`https://wa.me/94112345678?text=${encodeURIComponent(`Hello Prime Life Care, I would like to extend care duty (+7 Days) for Booking: ${result.bookingCode} (Patient: ${result.patientName}).`)}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                      className="px-4 py-2.5 sm:py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
                     >
-                      <Plus className="w-3.5 h-3.5" />
+                      <Plus className="w-3.5 h-3.5 shrink-0" />
                       <span>Request Duty Extension (+7 Days)</span>
                     </a>
 
@@ -507,9 +507,9 @@ export const BookingTracker: React.FC<BookingTrackerProps> = ({ bookings }) => {
                     <button
                       type="button"
                       onClick={() => window.print()}
-                      className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-slate-300"
+                      className="px-3.5 py-2.5 sm:py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer border border-slate-300"
                     >
-                      <Download className="w-3.5 h-3.5 text-slate-600" />
+                      <Download className="w-3.5 h-3.5 text-slate-600 shrink-0" />
                       <span>Print Clinical Summary</span>
                     </button>
 
@@ -518,9 +518,9 @@ export const BookingTracker: React.FC<BookingTrackerProps> = ({ bookings }) => {
                       <button
                         type="button"
                         onClick={() => setIsEditModalOpen(true)}
-                        className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-slate-300 shadow-2xs"
+                        className="px-3.5 py-2.5 sm:py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer border border-slate-300 shadow-2xs"
                       >
-                        <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+                        <Calendar className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                         <span>Extend / Shorten Plan & Caregiver</span>
                       </button>
                     )}
@@ -528,9 +528,9 @@ export const BookingTracker: React.FC<BookingTrackerProps> = ({ bookings }) => {
 
                   <a
                     href={`tel:${t.phone}`}
-                    className="inline-flex items-center gap-1.5 text-blue-600 text-xs font-bold hover:underline"
+                    className="inline-flex items-center justify-center sm:justify-start gap-1.5 text-blue-600 text-xs font-bold hover:underline pt-1 sm:pt-0"
                   >
-                    <Phone className="w-3.5 h-3.5" />
+                    <Phone className="w-3.5 h-3.5 shrink-0" />
                     <span>Clinical Helpline: {t.phone}</span>
                   </a>
                 </div>

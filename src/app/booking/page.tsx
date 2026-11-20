@@ -487,27 +487,27 @@ function BookingFormInner() {
       
       {/* Top Professional Header Bar */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-4">
+        <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-4">
           
           {/* Logo & Brand */}
-          <Link href="/" className="flex items-center gap-3 group">
+          <Link href="/" className="flex items-center gap-2 sm:gap-3 group min-w-0">
             <img
               src="/logo.png"
               alt="Prime Life Care"
-              className="w-9 h-9 sm:w-11 sm:h-11 rounded-full object-contain p-0.5 border border-slate-200 shadow-2xs group-hover:scale-105 transition-transform"
+              className="w-8 h-8 sm:w-11 sm:h-11 rounded-full object-contain p-0.5 border border-slate-200 shadow-2xs group-hover:scale-105 transition-transform shrink-0"
             />
-            <div>
-              <span className="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-tight block">
+            <div className="min-w-0">
+              <span className="text-sm sm:text-lg font-black text-slate-900 tracking-tight leading-tight block truncate">
                 PRIME LIFE CARE
               </span>
-              <span className="text-[10px] sm:text-xs font-semibold text-blue-600 block">
+              <span className="text-[10px] sm:text-xs font-semibold text-blue-600 hidden sm:block">
                 Official Dispatch Desk
               </span>
             </div>
           </Link>
 
           {/* Right Actions: Hotline, Language & Prominent Close Button */}
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-1.5 sm:gap-4 shrink-0">
             
             {/* 24/7 Hotline Badge */}
             <a
@@ -519,11 +519,11 @@ function BookingFormInner() {
             </a>
 
             {/* Language Switcher */}
-            <div className="flex items-center bg-slate-100 p-1 rounded-xl text-xs font-bold border border-slate-200">
+            <div className="flex items-center bg-slate-100 p-0.5 sm:p-1 rounded-xl text-[11px] sm:text-xs font-bold border border-slate-200">
               <button
                 type="button"
                 onClick={() => setLanguage('si')}
-                className={`px-2.5 py-1 rounded-lg transition-all ${
+                className={`px-2 sm:px-2.5 py-1 rounded-lg transition-all ${
                   language === 'si' ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -532,7 +532,7 @@ function BookingFormInner() {
               <button
                 type="button"
                 onClick={() => setLanguage('en')}
-                className={`px-2.5 py-1 rounded-lg transition-all ${
+                className={`px-2 sm:px-2.5 py-1 rounded-lg transition-all ${
                   language === 'en' ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -541,7 +541,7 @@ function BookingFormInner() {
               <button
                 type="button"
                 onClick={() => setLanguage('ta')}
-                className={`px-2.5 py-1 rounded-lg transition-all ${
+                className={`px-2 sm:px-2.5 py-1 rounded-lg transition-all ${
                   language === 'ta' ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -552,11 +552,12 @@ function BookingFormInner() {
             {/* PROMINENT CLOSE / BACK TO HOME BUTTON */}
             <Link
               href="/"
-              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-700 font-bold text-xs sm:text-sm border border-slate-200 hover:border-red-200 transition-all shadow-xs cursor-pointer group"
+              className="flex items-center gap-1.5 sm:gap-2 p-2 sm:px-4 sm:py-2.5 rounded-xl bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-700 font-bold text-xs sm:text-sm border border-slate-200 hover:border-red-200 transition-all shadow-xs cursor-pointer group shrink-0"
               title="Return to Home page"
+              aria-label="Return to Home page"
             >
               <X className="w-4 h-4 text-slate-500 group-hover:text-red-600 group-hover:rotate-90 transition-transform" />
-              <span className="hidden xs:inline">{t.closeBtn}</span>
+              <span className="hidden sm:inline">{t.closeBtn}</span>
             </Link>
 
           </div>
@@ -565,10 +566,10 @@ function BookingFormInner() {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+      <main className="flex-1 max-w-5xl w-full mx-auto px-3.5 sm:px-6 lg:px-8 py-5 sm:py-10">
 
         {/* Hero Section Banner */}
-        <div className="bg-gradient-to-br from-slate-900 via-slate-850 to-indigo-950 text-white rounded-3xl p-6 sm:p-8 mb-8 shadow-xl relative overflow-hidden border border-slate-800">
+        <div className="bg-gradient-to-br from-slate-900 via-slate-850 to-indigo-950 text-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 mb-6 sm:mb-8 shadow-xl relative overflow-hidden border border-slate-800">
           <div className="relative z-10 space-y-3">
             
             {/* Top Guarantees Badges */}
@@ -1192,7 +1193,7 @@ function BookingFormInner() {
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                     {t.durationLabel}
                   </label>
-                  <div className="flex items-center gap-2">
+                  <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2">
                     <button
                       type="button"
                       onClick={() => setDurationDays(7)}
@@ -1226,7 +1227,7 @@ function BookingFormInner() {
                       min={1}
                       max={180}
                       onChange={(e) => setDurationDays(e.target.value ? Number(e.target.value) : 7)}
-                      className="w-20 px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-center"
+                      className="w-full sm:w-20 px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-center bg-white"
                     />
                   </div>
                 </div>
@@ -1378,8 +1379,8 @@ function BookingFormInner() {
               </div>
 
               {/* Transparent Cost Breakdown Card */}
-              <div className="p-6 rounded-2xl bg-blue-50/80 border border-blue-200 space-y-3">
-                <div className="flex items-center justify-between text-sm">
+              <div className="p-4 sm:p-6 rounded-2xl bg-blue-50/80 border border-blue-200 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-1 text-xs sm:text-sm">
                   <span className="text-slate-600">
                     Staff Daily Rate ({durationDays} Days × LKR {dailyRate.toLocaleString()}):
                   </span>
@@ -1387,13 +1388,13 @@ function BookingFormInner() {
                     LKR {totalCost.toLocaleString()}
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex flex-wrap items-center justify-between gap-1 text-xs sm:text-sm">
                   <span className="text-slate-600">Administrative Dispatch Fee:</span>
                   <span className="font-bold text-emerald-600">FREE (LKR 0)</span>
                 </div>
-                <div className="pt-3 border-t border-blue-200 flex items-center justify-between">
-                  <span className="text-base font-black text-slate-900">{t.estimatedInvestment}:</span>
-                  <span className="text-2xl font-black text-blue-700">
+                <div className="pt-3 border-t border-blue-200 flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-sm sm:text-base font-black text-slate-900">{t.estimatedInvestment}:</span>
+                  <span className="text-xl sm:text-2xl font-black text-blue-700">
                     LKR {totalCost.toLocaleString()}
                   </span>
                 </div>
@@ -1426,12 +1427,12 @@ function BookingFormInner() {
             </div>
 
             {/* Navigation Buttons */}
-            <div className="flex items-center justify-between pt-4">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4">
               <button
                 type="button"
                 onClick={handlePrevStep}
                 disabled={isSubmitting}
-                className="px-5 py-3 rounded-2xl border border-slate-200 text-slate-600 font-bold text-xs sm:text-sm hover:bg-slate-100 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                className="px-5 py-3 rounded-2xl border border-slate-200 text-slate-600 font-bold text-xs sm:text-sm hover:bg-slate-100 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 <ArrowLeft className="w-4 h-4" />
                 <span>{t.btnBack}</span>
@@ -1440,7 +1441,7 @@ function BookingFormInner() {
                 type="button"
                 onClick={handleSubmitBooking}
                 disabled={isSubmitting}
-                className="px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold text-sm sm:text-base shadow-lg shadow-blue-500/25 hover:shadow-xl transition-all flex items-center gap-2 cursor-pointer active:scale-95 disabled:opacity-75"
+                className="px-6 sm:px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold text-sm sm:text-base shadow-lg shadow-blue-500/25 hover:shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 disabled:opacity-75"
               >
                 {isSubmitting ? (
                   <>

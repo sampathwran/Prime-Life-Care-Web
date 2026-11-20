@@ -284,24 +284,24 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   }[language];
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-100 overflow-hidden relative animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-start sm:items-center justify-center p-2.5 sm:p-4">
+      <div className="bg-white rounded-2xl sm:rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-100 overflow-hidden relative my-auto max-h-[94vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
         {/* Header - Clinical Slate */}
-        <div className="bg-slate-900 text-white p-6 relative">
+        <div className="bg-slate-900 text-white p-4 sm:p-6 relative shrink-0">
           <button
             type="button"
             onClick={resetAndClose}
-            className="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/15 hover:bg-red-600 text-white font-bold text-xs transition-all border border-white/20 shadow-xs cursor-pointer"
+            className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 z-20 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/15 hover:bg-red-600 text-white font-bold text-xs transition-all border border-white/20 shadow-xs cursor-pointer"
             title="Close"
           >
             <X className="w-4 h-4" />
             <span>{language === 'si' ? 'වසන්න' : language === 'ta' ? 'மூடு' : 'Close'}</span>
           </button>
-          <div className="flex items-center gap-2 mb-1 text-slate-300 text-xs font-bold uppercase tracking-wider pr-20">
-            <img src="/logo.png" alt="Logo" className="w-5 h-5 rounded-full bg-white object-contain p-0.5" />
-            <span>Prime Life Care Dispatch Portal</span>
+          <div className="flex items-center gap-2 mb-1 text-slate-300 text-[11px] sm:text-xs font-bold uppercase tracking-wider pr-20">
+            <img src="/logo.png" alt="Logo" className="w-5 h-5 rounded-full bg-white object-contain p-0.5 shrink-0" />
+            <span className="truncate">Prime Life Care Dispatch Portal</span>
           </div>
-          <h3 className="text-xl sm:text-2xl font-black">
+          <h3 className="text-lg sm:text-2xl font-black pr-16">
             {t.booking.modalTitle}
           </h3>
           <p className="text-xs sm:text-sm text-slate-300 mt-1">
@@ -310,11 +310,11 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
           {/* Stepper Progress */}
           {currentStep < 5 && (
-            <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-800 text-xs font-semibold">
-              <span className={currentStep >= 1 ? 'text-white font-bold' : 'text-slate-400'}>1. Service & Staff</span>
-              <span className={currentStep >= 2 ? 'text-white font-bold' : 'text-slate-400'}>{t.booking.step2}</span>
-              <span className={currentStep >= 3 ? 'text-white font-bold' : 'text-slate-400'}>{t.booking.step3}</span>
-              <span className={currentStep >= 4 ? 'text-white font-bold' : 'text-slate-400'}>{t.booking.step4}</span>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-slate-800 text-[11px] sm:text-xs font-semibold">
+              <span className={currentStep >= 1 ? 'text-white font-bold truncate' : 'text-slate-400 truncate'}>1. Service & Staff</span>
+              <span className={currentStep >= 2 ? 'text-white font-bold truncate' : 'text-slate-400 truncate'}>{t.booking.step2}</span>
+              <span className={currentStep >= 3 ? 'text-white font-bold truncate' : 'text-slate-400 truncate'}>{t.booking.step3}</span>
+              <span className={currentStep >= 4 ? 'text-white font-bold truncate' : 'text-slate-400 truncate'}>{t.booking.step4}</span>
             </div>
           )}
         </div>
